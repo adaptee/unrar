@@ -4,11 +4,6 @@
 #include "raros.hpp"
 #include "os.hpp"
 
-#ifdef RARDLL
-#include "dll.hpp"
-#endif
-
-
 #ifndef _WIN_CE
 #include "version.hpp"
 #endif
