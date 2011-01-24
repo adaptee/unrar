@@ -1,23 +1,19 @@
 #include "rar.hpp"
 
-#if defined(_EMX) && !defined(_DJGPP)
-#include "unios2.cpp"
-#endif
-
-bool WideToChar(const wchar *Src,char *Dest,size_t DestSize)
+bool WideToChar(const wchar *Src, char *Dest, size_t DestSize)
 {
   bool RetCode=true;
   *Dest=0; // Set 'Dest' to zero just in case the conversion will fail.
 
 #ifdef _WIN_ALL
-  if (WideCharToMultiByte(CP_ACP,0,Src,-1,Dest,(int)DestSize,NULL,NULL)==0)
+  if (WideCharToMultiByte(CP_ACP, 0, Src,-1, Dest,(int)DestSize, NULL, NULL)==0)
     RetCode=false;
 
 #elif defined(_APPLE)
-  WideToUtf(Src,Dest,DestSize);
+  WideToUtf(Src, Dest, DestSize);
 
 #elif defined(MBFUNCTIONS)
-  size_t ResultingSize=wcstombs(Dest,Src,DestSize);
+  size_t ResultingSize=wcstombs(Dest, Src, DestSize);
   if (ResultingSize==(size_t)-1)
     RetCode=false;
   if (ResultingSize==0 && *Src!=0)
@@ -30,15 +26,15 @@ bool WideToChar(const wchar *Src,char *Dest,size_t DestSize)
        (we are yet to find out what it depends on) can return an empty
        string and success code if buffer size value is too large.
     */
-    return(WideToChar(Src,Dest,NM));
+    return(WideToChar(Src, Dest, NM));
   }
 
 #else
   if (UnicodeEnabled())
   {
 #if defined(_EMX) && !defined(_DJGPP)
-    int len=Min(wcslen(Src)+1,DestSize-1);
-    if (uni_fromucs((UniChar*)Src,len,Dest,(size_t*)&DestSize)==-1 ||
+    int len=Min(wcslen(Src)+1, DestSize-1);
+    if (uni_fromucs((UniChar*)Src, len, Dest,(size_t*)&DestSize)==-1 ||
         DestSize>len*2)
       RetCode=false;
     Dest[DestSize]=0;
@@ -63,20 +59,20 @@ bool WideToChar(const wchar *Src,char *Dest,size_t DestSize)
 }
 
 
-bool CharToWide(const char *Src,wchar *Dest,size_t DestSize)
+bool CharToWide(const char *Src, wchar *Dest, size_t DestSize)
 {
   bool RetCode=true;
   *Dest=0; // Set 'Dest' to zero just in case the conversion will fail.
 
 #ifdef _WIN_ALL
-  if (MultiByteToWideChar(CP_ACP,0,Src,-1,Dest,(int)DestSize)==0)
+  if (MultiByteToWideChar(CP_ACP, 0, Src,-1, Dest,(int)DestSize)==0)
     RetCode=false;
 
 #elif defined(_APPLE)
-  UtfToWide(Src,Dest,DestSize);
+  UtfToWide(Src, Dest, DestSize);
 
 #elif defined(MBFUNCTIONS)
-  size_t ResultingSize=mbstowcs(Dest,Src,DestSize);
+  size_t ResultingSize=mbstowcs(Dest, Src, DestSize);
   if (ResultingSize==(size_t)-1)
     RetCode=false;
   if (ResultingSize==0 && *Src!=0)
@@ -89,14 +85,14 @@ bool CharToWide(const char *Src,wchar *Dest,size_t DestSize)
        (we are yet to find out what it depends on) can return an empty
        string and success code if buffer size value is too large.
     */
-    return(CharToWide(Src,Dest,NM));
+    return(CharToWide(Src, Dest, NM));
   }
 #else
   if (UnicodeEnabled())
   {
 #if defined(_EMX) && !defined(_DJGPP)
-    int len=Min(strlen(Src)+1,DestSize-1);
-    if (uni_toucs((char*)Src,len,(UniChar*)Dest,(size_t*)&DestSize)==-1 ||
+    int len=Min(strlen(Src)+1, DestSize-1);
+    if (uni_toucs((char*)Src, len,(UniChar*)Dest,(size_t*)&DestSize)==-1 ||
         DestSize>len)
       DestSize=0;
     RetCode=false;
@@ -121,9 +117,9 @@ bool CharToWide(const char *Src,wchar *Dest,size_t DestSize)
 }
 
 
-byte* WideToRaw(const wchar *Src,byte *Dest,size_t SrcSize)
+byte* WideToRaw(const wchar *Src, byte *Dest, size_t SrcSize)
 {
-  for (size_t I=0;I<SrcSize;I++,Src++)
+  for (size_t I=0;I<SrcSize;I++, Src++)
   {
     Dest[I*2]=(byte)*Src;
     Dest[I*2+1]=(byte)(*Src>>8);
@@ -134,7 +130,7 @@ byte* WideToRaw(const wchar *Src,byte *Dest,size_t SrcSize)
 }
 
 
-wchar* RawToWide(const byte *Src,wchar *Dest,size_t DestSize)
+wchar* RawToWide(const byte *Src, wchar *Dest, size_t DestSize)
 {
   for (size_t I=0;I<DestSize;I++)
     if ((Dest[I]=Src[I*2]+(Src[I*2+1]<<8))==0)
@@ -143,7 +139,7 @@ wchar* RawToWide(const byte *Src,wchar *Dest,size_t DestSize)
 }
 
 
-void WideToUtf(const wchar *Src,char *Dest,size_t DestSize)
+void WideToUtf(const wchar *Src, char *Dest, size_t DestSize)
 {
   long dsize=(long)DestSize;
   dsize--;
@@ -178,13 +174,13 @@ void WideToUtf(const wchar *Src,char *Dest,size_t DestSize)
 }
 
 
-void UtfToWide(const char *Src,wchar *Dest,size_t DestSize)
+void UtfToWide(const char *Src, wchar *Dest, size_t DestSize)
 {
   long dsize=(long)DestSize;
   dsize--;
   while (*Src!=0)
   {
-    uint c=(byte)*(Src++),d;
+    uint c=(byte)*(Src++), d;
     if (c<0x80)
       d=c;
     else
@@ -243,27 +239,27 @@ bool UnicodeEnabled()
 }
 
 
-int wcsicomp(const wchar *s1,const wchar *s2)
+int wcsicomp(const wchar *s1, const wchar *s2)
 {
-  char Ansi1[NM*sizeof(wchar)],Ansi2[NM*sizeof(wchar)];
-  WideToChar(s1,Ansi1,sizeof(Ansi1));
-  WideToChar(s2,Ansi2,sizeof(Ansi2));
-  return(stricomp(Ansi1,Ansi2));
+  char Ansi1[NM*sizeof(wchar)], Ansi2[NM*sizeof(wchar)];
+  WideToChar(s1, Ansi1, sizeof(Ansi1));
+  WideToChar(s2, Ansi2, sizeof(Ansi2));
+  return(stricomp(Ansi1, Ansi2));
 }
 
 
-static int wcsnicomp_w2c(const wchar *s1,const wchar *s2,size_t n)
+static int wcsnicomp_w2c(const wchar *s1, const wchar *s2, size_t n)
 {
-  char Ansi1[NM*2],Ansi2[NM*2];
-  GetAsciiName(s1,Ansi1,ASIZE(Ansi1));
-  GetAsciiName(s2,Ansi2,ASIZE(Ansi2));
-  return(stricomp(Ansi1,Ansi2));
+  char Ansi1[NM*2], Ansi2[NM*2];
+  GetAsciiName(s1, Ansi1, ASIZE(Ansi1));
+  GetAsciiName(s2, Ansi2, ASIZE(Ansi2));
+  return(stricomp(Ansi1, Ansi2));
 }
 
 
-int wcsnicomp(const wchar *s1,const wchar *s2,size_t n)
+int wcsnicomp(const wchar *s1, const wchar *s2, size_t n)
 {
-  return(wcsnicomp_w2c(s1,s2,n));
+  return(wcsnicomp_w2c(s1, s2, n));
 }
 
 
@@ -361,7 +357,7 @@ char* SupportDBCS::strchrd(const char *s, int c)
 }
 
 
-void SupportDBCS::copychrd(char *dest,const char *src)
+void SupportDBCS::copychrd(char *dest, const char *src)
 {
   dest[0]=src[0];
   if (IsLeadByte[(byte)src[0]])
