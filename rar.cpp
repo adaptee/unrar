@@ -8,16 +8,8 @@ int main(int argc, char *argv[])
   setlocale(LC_ALL,"");
 #endif
 
-#if defined(_EMX) && !defined(_DJGPP)
-  uni_init(0);
-#endif
-
 #if !defined(_SFX_RTL_) && !defined(_WIN_ALL)
-  setbuf(stdout,NULL);
-#endif
-
-#if !defined(SFX_MODULE) && defined(_EMX)
-  EnumConfigPaths(argv[0],-1);
+  setbuf(stdout, NULL);
 #endif
 
   ErrHandler.SetSignalHandlers(true);
@@ -28,10 +20,10 @@ int main(int argc, char *argv[])
   char ModuleNameA[NM];
   wchar ModuleNameW[NM];
 #ifdef _WIN_ALL
-  GetModuleFileNameW(NULL,ModuleNameW,ASIZE(ModuleNameW));
-  WideToChar(ModuleNameW,ModuleNameA);
+  GetModuleFileNameW(NULL, ModuleNameW, ASIZE(ModuleNameW));
+  WideToChar(ModuleNameW, ModuleNameA);
 #else
-  strcpy(ModuleNameA,argv[0]);
+  strcpy(ModuleNameA, argv[0]);
   *ModuleNameW=0;
 #endif
 #endif
@@ -47,10 +39,10 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ALLOW_EXCEPTIONS
-  try 
+  try
 #endif
   {
-  
+
     CommandData Cmd;
 #ifdef SFX_MODULE
     strcpy(Cmd.Command,"X");
@@ -82,15 +74,15 @@ int main(int argc, char *argv[])
           break;
       }
     }
-    Cmd.AddArcName(ModuleNameA,ModuleNameW);
+    Cmd.AddArcName(ModuleNameA, ModuleNameW);
 #else
-    if (Cmd.IsConfigEnabled(argc,argv))
+    if (Cmd.IsConfigEnabled(argc, argv))
     {
-      Cmd.ReadConfig(argc,argv);
+      Cmd.ReadConfig(argc, argv);
       Cmd.ParseEnvVar();
     }
     for (int I=1;I<argc;I++)
-      Cmd.ParseArg(argv[I],NULL);
+      Cmd.ParseArg(argv[I], NULL);
 #endif
     Cmd.ParseDone();
 
@@ -98,7 +90,7 @@ int main(int argc, char *argv[])
     ShutdownOnClose=Cmd.Shutdown;
 #endif
 
-    InitConsoleOptions(Cmd.MsgStream,Cmd.Sound);
+    InitConsoleOptions(Cmd.MsgStream, Cmd.Sound);
     InitLogOptions(Cmd.LogName);
     ErrHandler.SetSilent(Cmd.AllYes || Cmd.MsgStream==MSG_NULL);
     ErrHandler.SetShutdown(Cmd.Shutdown);
@@ -124,11 +116,9 @@ int main(int argc, char *argv[])
 #endif
   File::RemoveCreated();
 #if defined(SFX_MODULE) && defined(_DJGPP)
-  _chmod(ModuleNameA,1,0x20);
+  _chmod(ModuleNameA, 1, 0x20);
 #endif
-#if defined(_EMX) && !defined(_DJGPP)
-  uni_done();
-#endif
+
 #if defined(_WIN_ALL) && !defined(SFX_MODULE) && !defined(SHELL_EXT)
   if (ShutdownOnClose)
     Shutdown();

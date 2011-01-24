@@ -32,13 +32,6 @@ bool WideToChar(const wchar *Src, char *Dest, size_t DestSize)
 #else
   if (UnicodeEnabled())
   {
-#if defined(_EMX) && !defined(_DJGPP)
-    int len=Min(wcslen(Src)+1, DestSize-1);
-    if (uni_fromucs((UniChar*)Src, len, Dest,(size_t*)&DestSize)==-1 ||
-        DestSize>len*2)
-      RetCode=false;
-    Dest[DestSize]=0;
-#endif
   }
   else
     for (int I=0;I<DestSize;I++)
@@ -90,13 +83,6 @@ bool CharToWide(const char *Src, wchar *Dest, size_t DestSize)
 #else
   if (UnicodeEnabled())
   {
-#if defined(_EMX) && !defined(_DJGPP)
-    int len=Min(strlen(Src)+1, DestSize-1);
-    if (uni_toucs((char*)Src, len,(UniChar*)Dest,(size_t*)&DestSize)==-1 ||
-        DestSize>len)
-      DestSize=0;
-    RetCode=false;
-#endif
   }
   else
     for (int I=0;I<DestSize;I++)
@@ -228,11 +214,7 @@ void UtfToWide(const char *Src, wchar *Dest, size_t DestSize)
 bool UnicodeEnabled()
 {
 #ifdef UNICODE_SUPPORTED
-  #ifdef _EMX
-    return(uni_ready);
-  #else
-    return(true);
-  #endif
+  return(true);
 #else
   return(false);
 #endif
