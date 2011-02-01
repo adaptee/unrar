@@ -988,9 +988,9 @@ void Unpack::UnpInitData(int Solid)
 {
     if (!Solid)
     {
-        TablesRead=false;
+        TablesRead = false;
         memset(OldDist, 0, sizeof(OldDist));
-        OldDistPtr=0;
+        OldDistPtr = 0;
         LastDist=LastLength=0;
         //    memset(Window, 0, MAXWINSIZE);
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
@@ -1000,15 +1000,16 @@ void Unpack::UnpInitData(int Solid)
         memset(&RD, 0, sizeof(RD));
         memset(&BD, 0, sizeof(BD));
         UnpPtr=WrPtr=0;
-        PPMEscChar=2;
-        UnpBlockType=BLOCK_LZ;
+        PPMEscChar = 2;
+        UnpBlockType = BLOCK_LZ;
 
         InitFilters();
     }
+
     InitBitInput();
-    WrittenFileSize=0;
-    ReadTop=0;
-    ReadBorder=0;
+    WrittenFileSize = 0;
+    ReadTop         = 0;
+    ReadBorder      = 0;
 
 }
 
@@ -1016,7 +1017,7 @@ void Unpack::UnpInitData(int Solid)
 void Unpack::InitFilters()
 {
     OldFilterLengths.Reset();
-    LastFilter=0;
+    LastFilter = 0;
 
     for (size_t I=0;I<Filters.Size();I++)
         delete Filters[I];
