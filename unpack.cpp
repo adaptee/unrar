@@ -8,7 +8,7 @@ Unpack::Unpack(ComprDataIO *DataIO)
 {
     UnpIO=DataIO;
     Window=NULL;
-    ExternalWindow=false;
+    m_useExternalWindow=false;
     UnpAllBuf=false;
     UnpSomeRead=false;
 }
@@ -16,7 +16,7 @@ Unpack::Unpack(ComprDataIO *DataIO)
 
 Unpack::~Unpack()
 {
-    if (Window!=NULL && !ExternalWindow)
+    if (Window!=NULL && !m_useExternalWindow)
         delete[] Window;
     InitFilters();
 }
@@ -35,7 +35,7 @@ void Unpack::Init(byte *Window)
     else
     {
         Unpack::Window=Window;
-        ExternalWindow=true;
+        m_useExternalWindow=true;
     }
     UnpInitData(false);
 

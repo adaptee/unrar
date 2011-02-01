@@ -145,7 +145,7 @@ private:
     int UnpBlockType;
 
     byte *Window;
-    bool ExternalWindow;
+    bool m_useExternalWindow;
 
 
     int64 DestUnpSize;
