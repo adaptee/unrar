@@ -7,9 +7,11 @@
 Unpack::Unpack(ComprDataIO *DataIO)
 {
     m_io = DataIO;
+
     Window = NULL;
     m_useExternalWindow = false;
-    UnpAllBuf = false;
+
+    UnpAllBuf   = false;
     UnpSomeRead = false;
 }
 
@@ -23,7 +25,7 @@ Unpack::~Unpack()
 }
 
 
-void Unpack::Init(byte *Window)
+void Unpack::Init(byte * Window)
 {
     if (Window)
     {
@@ -84,7 +86,9 @@ inline void Unpack::InsertLastMatch(unsigned int Length, unsigned int Distance)
 _forceinline void Unpack::CopyString(uint Length, uint Distance)
 {
     uint SrcPtr = UnpPtr - Distance;
-    if ( (SrcPtr < MAXWINSIZE-MAX_LZ_MATCH) && UnpPtr < MAXWINSIZE-MAX_LZ_MATCH)
+    if ( (SrcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
+         (UnpPtr < (MAXWINSIZE - MAX_LZ_MATCH))
+       )
     {
         // If we are not close to end of window, we do not need to waste time
         // to "& MAXWINMASK" pointer protection.
@@ -105,9 +109,9 @@ _forceinline void Unpack::CopyString(uint Length, uint Distance)
             Dest[6] = Src[6];
             Dest[7] = Src[7];
 
-            Src+=8;
-            Dest+=8;
-            Length-=8;
+            Src  += 8;
+            Dest += 8;
+            Length -= 8;
         }
 
         // Unroll the loop for 0 - 7 bytes left. Note that we use nested "if"s.
@@ -122,8 +126,8 @@ _forceinline void Unpack::CopyString(uint Length, uint Distance)
     else
         while (Length--) // Slow copying with all possible precautions.
         {
-            Window[UnpPtr]=Window[SrcPtr++ & MAXWINMASK];
-            UnpPtr=(UnpPtr+1) & MAXWINMASK;
+            Window[UnpPtr] = Window[SrcPtr++ & MAXWINMASK];
+            UnpPtr = (UnpPtr+1) & MAXWINMASK;
         }
 }
 
@@ -135,7 +139,7 @@ _forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
 
     if (BitField < Dec->DecodeLen[Dec->QuickBits])
     {
-        uint Code = BitField>>(16-Dec->QuickBits);
+        uint Code = BitField>>(16 - Dec->QuickBits);
         addbits(Dec->QuickLen[Code]);
         return Dec->QuickNum[Code];
     }
@@ -169,7 +173,7 @@ _forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
 
     // Convert the position in the code list to position in alphabet
     // and return it.
-    return(Dec->DecodeNum[Pos]);
+    return Dec->DecodeNum[Pos];
 }
 
 
@@ -312,35 +316,35 @@ void Unpack::Unpack29(bool Solid)
 
         int Number = DecodeNumber(&LD);
 
-        if (Number<256)
+        if (Number < 256)
         {
             Window[UnpPtr++] = (byte)Number;
             continue;
         }
-        if (Number>=271)
+        if (Number >= 271)
         {
-            int Length=LDecode[Number-=271]+3;
-            if ((Bits=LBits[Number])>0)
+            int Length = LDecode[Number-=271] + 3;
+            if ((Bits=LBits[Number]) > 0)
             {
                 Length += ( getbits() >> (16-Bits) );
                 addbits(Bits);
             }
 
             int DistNumber        = DecodeNumber(&DD);
-            unsigned int Distance = DDecode[DistNumber]+1;
-            if ((Bits=DBits[DistNumber])>0)
+            unsigned int Distance = DDecode[DistNumber] + 1;
+            if ((Bits=DBits[DistNumber]) > 0)
             {
-                if (DistNumber>9)
+                if (DistNumber > 9)
                 {
-                    if (Bits>4)
+                    if (Bits > 4)
                     {
-                        Distance+=((getbits()>>(20-Bits))<<4);
+                        Distance += ((getbits()>>(20-Bits))<<4);
                         addbits(Bits-4);
                     }
-                    if (LowDistRepCount>0)
+                    if (LowDistRepCount > 0)
                     {
                         LowDistRepCount--;
-                        Distance+=PrevLowDist;
+                        Distance += PrevLowDist;
                     }
                     else
                     {
@@ -348,26 +352,26 @@ void Unpack::Unpack29(bool Solid)
                         if (LowDist == 16)
                         {
                             LowDistRepCount = LOW_DIST_REP_COUNT-1;
-                            Distance+=PrevLowDist;
+                            Distance += PrevLowDist;
                         }
                         else
                         {
-                            Distance+=LowDist;
+                            Distance += LowDist;
                             PrevLowDist = LowDist;
                         }
                     }
                 }
                 else
                 {
-                    Distance+=getbits()>>(16-Bits);
+                    Distance += getbits() >> (16-Bits);
                     addbits(Bits);
                 }
             }
 
-            if (Distance>=0x2000)
+            if (Distance >= 0x2000)
             {
                 Length++;
-                if (Distance>=0x40000L)
+                if (Distance >= 0x40000L)
                     Length++;
             }
 
@@ -390,17 +394,17 @@ void Unpack::Unpack29(bool Solid)
         }
         if (Number == 258)
         {
-            if (LastLength!=0)
+            if (LastLength != 0)
                 CopyString(LastLength, LastDist);
             continue;
         }
-        if (Number<263)
+        if (Number < 263)
         {
             int DistNum           = Number - 259;
             unsigned int Distance = OldDist[DistNum];
 
             for (int i=DistNum;i>0;i--)
-                OldDist[i]=OldDist[i-1];
+                OldDist[i] = OldDist[i-1];
 
             OldDist[0] = Distance;
 
@@ -408,7 +412,7 @@ void Unpack::Unpack29(bool Solid)
             int Length       = LDecode[LengthNumber]+2;
             if ((Bits=LBits[LengthNumber])>0)
             {
-                Length+=getbits()>>(16-Bits);
+                Length += getbits() >> (16-Bits);
                 addbits(Bits);
             }
             InsertLastMatch(Length, Distance);
@@ -417,10 +421,10 @@ void Unpack::Unpack29(bool Solid)
         }
         if (Number<272)
         {
-            unsigned int Distance=SDDecode[Number-=263]+1;
+            unsigned int Distance = SDDecode[Number-=263]+1;
             if ((Bits=SDBits[Number])>0)
             {
-                Distance+=getbits()>>(16-Bits);
+                Distance += (getbits() >> (16-Bits));
                 addbits(Bits);
             }
             InsertOldDist(Distance);
@@ -445,7 +449,7 @@ bool Unpack::ReadEndOfBlock()
     else
     {
         NewFile = true;
-        NewTable=(BitField & 0x4000)!=0;
+        NewTable = ((BitField & 0x4000) != 0);
         addbits(2);
     }
 
@@ -500,7 +504,8 @@ bool Unpack::ReadVMCodePPM()
         int B1 = SafePPMDecodeChar();
         if (B1 == -1)
             return false;
-        Length = B1+7;
+
+        Length = B1 + 7;
     }
     else
         if (Length == 8)
@@ -511,7 +516,7 @@ bool Unpack::ReadVMCodePPM()
             int B2 = SafePPMDecodeChar();
             if (B2 == -1)
                 return false;
-            Length = B1*256+B2;
+            Length = B1 * 256 + B2;
         }
     Array<byte> VMCode(Length);
     for (int i=0;i<Length;i++)
@@ -521,7 +526,8 @@ bool Unpack::ReadVMCodePPM()
             return false;
         VMCode[i] = Ch;
     }
-    return(AddVMCode(FirstByte,&VMCode[0], Length));
+
+    return AddVMCode(FirstByte,&VMCode[0], Length);
 }
 
 
@@ -579,7 +585,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
         PrgStack[i-EmptyCount] = PrgStack[i];
         if (PrgStack[i] == NULL)
             EmptyCount++;
-        if (EmptyCount>0)
+        if (EmptyCount > 0)
             PrgStack[i] = NULL;
     }
     if (EmptyCount == 0)
@@ -600,7 +606,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
         StackFilter->BlockLength = RarVM::ReadData(Inp);
     else
         StackFilter->BlockLength = FiltPos < OldFilterLengths.Size() ? OldFilterLengths[FiltPos] : 0;
-    StackFilter->NextWindow=WrPtr!=UnpPtr && ((WrPtr-UnpPtr)&MAXWINMASK)<=BlockStart;
+    StackFilter->NextWindow = (WrPtr != UnpPtr) && ((WrPtr-UnpPtr) & MAXWINMASK) <= BlockStart;
 
     //  DebugLog("\nNextWindow: UnpPtr=%08x WrPtr=%08x BlockStart=%08x", UnpPtr, WrPtr, BlockStart);
 
@@ -633,8 +639,9 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
             VMCode[i] = (Inp.fgetbits() >> 8);
             Inp.faddbits(8);
         }
-        m_vm.Prepare(&VMCode[0], VMCodeSize,&Filter->Prg);
+        m_vm.Prepare(&VMCode[0], VMCodeSize, &Filter->Prg);
     }
+
     StackFilter->Prg.AltCmd   = & (Filter->Prg.Cmd[0]);
     StackFilter->Prg.CmdCount = Filter->Prg.CmdCount;
 
@@ -643,7 +650,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     {
         // read statically defined data contained in DB commands
         StackFilter->Prg.StaticData.Add(StaticDataSize);
-        memcpy(&StackFilter->Prg.StaticData[0],&Filter->Prg.StaticData[0], StaticDataSize);
+        memcpy(&StackFilter->Prg.StaticData[0], &Filter->Prg.StaticData[0], StaticDataSize);
     }
 
     if (StackFilter->Prg.GlobalData.Size() <  VM_FIXEDGLOBALSIZE)
@@ -667,8 +674,8 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
         if (DataSize > VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE)
             return false;
         size_t CurSize = StackFilter->Prg.GlobalData.Size();
-        if (CurSize<DataSize+VM_FIXEDGLOBALSIZE)
-            StackFilter->Prg.GlobalData.Add(DataSize+VM_FIXEDGLOBALSIZE-CurSize);
+        if (CurSize < DataSize + VM_FIXEDGLOBALSIZE)
+            StackFilter->Prg.GlobalData.Add(DataSize + VM_FIXEDGLOBALSIZE - CurSize);
         byte *GlobalData = &StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
         for (uint i=0;i<DataSize;i++)
         {
@@ -702,7 +709,7 @@ bool Unpack::UnpReadBuf()
         DataSize = ReadTop;
     }
 
-    int ReadCode=m_io->UnpRead(InBuf+DataSize,(BitInput::MAX_SIZE-DataSize)&~0xf);
+    int ReadCode = m_io->UnpRead(InBuf+DataSize, (BitInput::MAX_SIZE-DataSize) & ~0xf);
 
     if (ReadCode > 0)
         ReadTop += ReadCode;
@@ -762,7 +769,7 @@ void Unpack::UnpWriteBuf()
                 {
                     // Copy global data from previous script execution if any.
                     Prg->GlobalData.Alloc(ParentPrg->GlobalData.Size());
-                    memcpy(&Prg->GlobalData[VM_FIXEDGLOBALSIZE],&ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE], ParentPrg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
+                    memcpy(&Prg->GlobalData[VM_FIXEDGLOBALSIZE], &ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE], ParentPrg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
                 }
 
                 ExecuteCode(Prg);
@@ -770,23 +777,28 @@ void Unpack::UnpWriteBuf()
                 if (Prg->GlobalData.Size() > VM_FIXEDGLOBALSIZE)
                 {
                     // Save global data for next script execution.
-                    if (ParentPrg->GlobalData.Size()<Prg->GlobalData.Size())
+                    if (ParentPrg->GlobalData.Size() < Prg->GlobalData.Size())
                         ParentPrg->GlobalData.Alloc(Prg->GlobalData.Size());
-                    memcpy(&ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE],&Prg->GlobalData[VM_FIXEDGLOBALSIZE], Prg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
+
+                    memcpy(&ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE], &Prg->GlobalData[VM_FIXEDGLOBALSIZE], Prg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
                 }
                 else
+                {
                     ParentPrg->GlobalData.Reset();
+                }
 
                 byte * FilteredData = Prg->FilteredData;
                 unsigned int FilteredDataSize = Prg->FilteredDataSize;
 
                 delete PrgStack[i];
                 PrgStack[i] = NULL;
-                while (i+1 < PrgStack.Size())
+                while ( i+1 < PrgStack.Size())
                 {
                     UnpackFilter *NextFilter = PrgStack[i+1];
-                    if (NextFilter == NULL || NextFilter->BlockStart!=BlockStart ||
-                            NextFilter->BlockLength!=FilteredDataSize || NextFilter->NextWindow)
+                    if (    NextFilter == NULL ||
+                            NextFilter->BlockStart != BlockStart ||
+                            NextFilter->BlockLength != FilteredDataSize ||
+                            NextFilter->NextWindow)
                         break;
 
                     // Apply several filters to same data block.
@@ -800,7 +812,7 @@ void Unpack::UnpWriteBuf()
                     {
                         // Copy global data from previous script execution if any.
                         NextPrg->GlobalData.Alloc(ParentPrg->GlobalData.Size());
-                        memcpy(&NextPrg->GlobalData[VM_FIXEDGLOBALSIZE],&ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE], ParentPrg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
+                        memcpy(&NextPrg->GlobalData[VM_FIXEDGLOBALSIZE], &ParentPrg->GlobalData[VM_FIXEDGLOBALSIZE], ParentPrg->GlobalData.Size()-VM_FIXEDGLOBALSIZE);
                     }
 
                     ExecuteCode(NextPrg);
@@ -912,18 +924,23 @@ bool Unpack::ReadTables()
 
     if (!(BitField & 0x4000))
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
+
     faddbits(2);
 
     for (int i=0;i<BC;i++)
     {
         int Length = (byte)(fgetbits() >> 12);
         faddbits(4);
+
         if (Length == 15)
         {
             int ZeroCount = (byte)(fgetbits() >> 12);
             faddbits(4);
+
             if (ZeroCount == 0)
+            {
                 BitLength[i] = 15;
+            }
             else
             {
                 ZeroCount += 2;
