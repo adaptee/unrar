@@ -230,7 +230,8 @@ void Unpack::Unpack29(bool Solid)
             if (!UnpReadBuf())
                 break;
         }
-        if (((WrPtr-UnpPtr) & MAXWINMASK) < 260 && WrPtr != UnpPtr)
+        if ((   ((WrPtr-UnpPtr) & MAXWINMASK) < 260) &&
+                (WrPtr != UnpPtr) )
         {
             UnpWriteBuf();
             if (WrittenFileSize > DestUnpSize)
