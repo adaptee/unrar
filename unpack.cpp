@@ -170,15 +170,15 @@ _forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
 }
 
 
-// We use it instead of direct PPM.DecodeChar call to be sure that
+// We use it instead of direct m_ppm.DecodeChar call to be sure that
 // we reset PPM structures in case of corrupt data. It is important,
-// because these structures can be invalid after PPM.DecodeChar returned -1.
+// because these structures can be invalid after m_ppm.DecodeChar returned -1.
 inline int Unpack::SafePPMDecodeChar()
 {
-    int ch = PPM.DecodeChar();
+    int ch = m_ppm.DecodeChar();
     if (ch == -1 )              // Corrupt PPM data found.
     {
-        PPM.CleanUp();         // Reset possibly corrupt PPM data structures.
+        m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
         UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
     }
     return(ch);
@@ -238,10 +238,10 @@ void Unpack::Unpack29(bool Solid)
             // Here speed is critical, so we do not use SafePPMDecodeChar,
             // because sometimes even the inline function can introduce
             // some additional penalty.
-            int Ch=PPM.DecodeChar();
+            int Ch=m_ppm.DecodeChar();
             if (Ch==-1)              // Corrupt PPM data found.
             {
-                PPM.CleanUp();         // Reset possibly corrupt PPM data structures.
+                m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
                 UnpBlockType=BLOCK_LZ; // Set faster and more fail proof LZ mode.
                 break;
             }
@@ -264,7 +264,7 @@ void Unpack::Unpack29(bool Solid)
                         break;
                     continue;
                 }
-                if (NextCh==4) // LZ inside of PPM.
+                if (NextCh==4) // LZ inside of m_ppm.
                 {
                     unsigned int Distance=0, Length;
                     bool Failed=false;
@@ -285,7 +285,7 @@ void Unpack::Unpack29(bool Solid)
                     CopyString(Length+32, Distance+2);
                     continue;
                 }
-                if (NextCh==5) // One byte distance match (RLE) inside of PPM.
+                if (NextCh==5) // One byte distance match (RLE) inside of m_ppm.
                 {
                     int Length=SafePPMDecodeChar();
                     if (Length==-1)
@@ -869,7 +869,7 @@ bool Unpack::ReadTables()
     if (BitField & 0x8000)
     {
         UnpBlockType=BLOCK_PPM;
-        return(PPM.DecodeInit(this, PPMEscChar));
+        return(m_ppm.DecodeInit(this, PPMEscChar));
     }
     UnpBlockType=BLOCK_LZ;
 

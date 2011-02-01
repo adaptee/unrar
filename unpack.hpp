@@ -102,7 +102,7 @@ private:
     void InitFilters();
 
     ComprDataIO *UnpIO;
-    ModelPPM PPM;
+    ModelPPM m_ppm;
     int PPMEscChar;
 
     RarVM VM;
