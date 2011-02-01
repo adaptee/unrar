@@ -9,70 +9,88 @@ enum BLOCK_TYPES {BLOCK_LZ, BLOCK_PPM};
 // Decode compressed bit fields to alphabet numbers.
 struct DecodeTable
 {
-  // Real size of DecodeNum table.
-  uint MaxNum;
+    // Real size of DecodeNum table.
+    uint MaxNum;
 
-  // Left aligned start and upper limit codes defining code space
-  // ranges for bit lengths. DecodeLen[BitLength-1] defines the start of
-  // range for bit length and DecodeLen[BitLength] defines next code
-  // after the end of range or in other words the upper limit code
-  // for specified bit length.
-  uint DecodeLen[16];
+    // Left aligned start and upper limit codes defining code space
+    // ranges for bit lengths. DecodeLen[BitLength-1] defines the start of
+    // range for bit length and DecodeLen[BitLength] defines next code
+    // after the end of range or in other words the upper limit code
+    // for specified bit length.
+    uint DecodeLen[16];
 
-  // Every item of this array contains the sum of all preceding items.
-  // So it contains the start position in code list for every bit length.
-  uint DecodePos[16];
+    // Every item of this array contains the sum of all preceding items.
+    // So it contains the start position in code list for every bit length.
+    uint DecodePos[16];
 
-  // Number of compressed bits processed in quick mode.
-  // Must not exceed MAX_QUICK_DECODE_BITS.
-  uint QuickBits;
+    // Number of compressed bits processed in quick mode.
+    // Must not exceed MAX_QUICK_DECODE_BITS.
+    uint QuickBits;
 
-  // Translates compressed bits (up to QuickBits length)
-  // to bit length in quick mode.
-  byte QuickLen[1<<MAX_QUICK_DECODE_BITS];
+    // Translates compressed bits (up to QuickBits length)
+    // to bit length in quick mode.
+    byte QuickLen[1<<MAX_QUICK_DECODE_BITS];
 
-  // Translates compressed bits (up to QuickBits length)
-  // to position in alphabet in quick mode.
-  uint QuickNum[1<<MAX_QUICK_DECODE_BITS];
+    // Translates compressed bits (up to QuickBits length)
+    // to position in alphabet in quick mode.
+    uint QuickNum[1<<MAX_QUICK_DECODE_BITS];
 
-  // Translate the position in code list to position in alphabet.
-  // We do not allocate it dynamically to avoid performance overhead
-  // introduced by pointer, so we use the largest possible table size
-  // as array dimension. Real size of this array is defined in MaxNum.
-  // We use this array if compressed bit field is too lengthy
-  // for QuickLen based translation.
-  uint DecodeNum[LARGEST_TABLE_SIZE];
+    // Translate the position in code list to position in alphabet.
+    // We do not allocate it dynamically to avoid performance overhead
+    // introduced by pointer, so we use the largest possible table size
+    // as array dimension. Real size of this array is defined in MaxNum.
+    // We use this array if compressed bit field is too lengthy
+    // for QuickLen based translation.
+    uint DecodeNum[LARGEST_TABLE_SIZE];
 };
 
 struct UnpackFilter
 {
-  unsigned int BlockStart;
-  unsigned int BlockLength;
-  unsigned int ExecCount;
-  bool NextWindow;
+    unsigned int BlockStart;
+    unsigned int BlockLength;
+    unsigned int ExecCount;
+    bool NextWindow;
 
-  // position of parent filter in Filters array used as prototype for filter
-  // in PrgStack array. Not defined for filters in Filters array.
-  unsigned int ParentFilter;
+    // position of parent filter in Filters array used as prototype for filter
+    // in PrgStack array. Not defined for filters in Filters array.
+    unsigned int ParentFilter;
 
-  VM_PreparedProgram Prg;
+    VM_PreparedProgram Prg;
 };
 
 
 struct AudioVariables // For RAR 2.0 archives only.
 {
-  int K1, K2, K3, K4, K5;
-  int D1, D2, D3, D4;
-  int LastDelta;
-  unsigned int Dif[11];
-  unsigned int ByteCount;
-  int LastChar;
+    int K1, K2, K3, K4, K5;
+    int D1, D2, D3, D4;
+    int LastDelta;
+    unsigned int Dif[11];
+    unsigned int ByteCount;
+    int LastChar;
 };
 
 
 class Unpack:private BitInput
 {
-  private:
+
+public:
+    Unpack(ComprDataIO *DataIO);
+    ~Unpack();
+    void Init(byte *Window=NULL);
+    void DoUnpack(int Method, bool Solid);
+    bool IsFileExtracted() {return(FileExtracted);}
+    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;FileExtracted=false;}
+    void SetSuspended(bool Suspended) {Unpack::Suspended=Suspended;}
+
+    unsigned int GetChar()
+    {
+        if (InAddr>BitInput::MAX_SIZE-30)
+            UnpReadBuf();
+        return(InBuf[InAddr++]);
+    }
+
+
+private:
     friend class Pack;
 
     void Unpack29(bool Solid);
@@ -153,21 +171,6 @@ class Unpack:private BitInput
 
     int PrevLowDist, LowDistRepCount;
 
-public:
-    Unpack(ComprDataIO *DataIO);
-    ~Unpack();
-    void Init(byte *Window=NULL);
-    void DoUnpack(int Method, bool Solid);
-    bool IsFileExtracted() {return(FileExtracted);}
-    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;FileExtracted=false;}
-    void SetSuspended(bool Suspended) {Unpack::Suspended=Suspended;}
-
-    unsigned int GetChar()
-    {
-      if (InAddr>BitInput::MAX_SIZE-30)
-        UnpReadBuf();
-      return(InBuf[InAddr++]);
-    }
 };
 
 #endif
