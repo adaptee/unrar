@@ -78,9 +78,7 @@ public:
     ~Unpack();
     void Init(byte *Window=NULL);
     void DoUnpack(int Method, bool Solid);
-    bool IsFileExtracted() {return(FileExtracted);}
     void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;FileExtracted=false;}
-    void SetSuspended(bool Suspended) {Unpack::Suspended=Suspended;}
 
     unsigned int GetChar()
     {
@@ -163,7 +161,6 @@ private:
 
     int64 DestUnpSize;
 
-    bool Suspended;
     bool UnpAllBuf;
     bool UnpSomeRead;
     int64 WrittenFileSize;

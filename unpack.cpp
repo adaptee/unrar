@@ -9,7 +9,6 @@ Unpack::Unpack(ComprDataIO *DataIO)
     UnpIO=DataIO;
     Window=NULL;
     ExternalWindow=false;
-    Suspended=false;
     UnpAllBuf=false;
     UnpSomeRead=false;
 }
@@ -210,14 +209,11 @@ void Unpack::Unpack29(bool Solid)
 
     FileExtracted=true;
 
-    if (!Suspended)
-    {
-        UnpInitData(Solid);
-        if (!UnpReadBuf())
-            return;
-        if ((!Solid || !TablesRead) && !ReadTables())
-            return;
-    }
+    UnpInitData(Solid);
+    if (!UnpReadBuf())
+        return;
+    if ((!Solid || !TablesRead) && !ReadTables())
+        return;
 
     while (true)
     {
@@ -233,11 +229,9 @@ void Unpack::Unpack29(bool Solid)
             UnpWriteBuf();
             if (WrittenFileSize>DestUnpSize)
                 return;
-            if (Suspended)
-            {
+            else
                 FileExtracted=false;
                 return;
-            }
         }
         if (UnpBlockType==BLOCK_PPM)
         {
