@@ -175,13 +175,13 @@ _forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
 // because these structures can be invalid after PPM.DecodeChar returned -1.
 inline int Unpack::SafePPMDecodeChar()
 {
-    int Ch=PPM.DecodeChar();
-    if (Ch==-1)              // Corrupt PPM data found.
+    int ch = PPM.DecodeChar();
+    if (ch == -1 )              // Corrupt PPM data found.
     {
         PPM.CleanUp();         // Reset possibly corrupt PPM data structures.
-        UnpBlockType=BLOCK_LZ; // Set faster and more fail proof LZ mode.
+        UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
     }
-    return(Ch);
+    return(ch);
 }
 
 
