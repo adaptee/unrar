@@ -245,16 +245,16 @@ void Unpack::Unpack29(bool Solid)
             // Here speed is critical, so we do not use SafePPMDecodeChar,
             // because sometimes even the inline function can introduce
             // some additional penalty.
-            int Ch=m_ppm.DecodeChar();
+            int Ch = m_ppm.DecodeChar();
             if (Ch == -1)              // Corrupt PPM data found.
             {
                 m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
-                UnpBlockType=BLOCK_LZ; // Set faster and more fail proof LZ mode.
+                UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
                 break;
             }
             if (Ch == PPMEscChar)
             {
-                int NextCh=SafePPMDecodeChar();
+                int NextCh = SafePPMDecodeChar();
                 if (NextCh == 0)  // End of PPM encoding.
                 {
                     if (!ReadTables())
@@ -274,17 +274,17 @@ void Unpack::Unpack29(bool Solid)
                 if (NextCh == 4) // LZ inside of m_ppm.
                 {
                     unsigned int Distance=0, Length;
-                    bool Failed=false;
+                    bool Failed = false;
                     for (int I=0;I<4 && !Failed;I++)
                     {
-                        int Ch=SafePPMDecodeChar();
+                        int Ch = SafePPMDecodeChar();
                         if (Ch == -1)
                             Failed=true;
                         else
                             if (I == 3)
-                                Length=(byte)Ch;
+                                Length = (byte)Ch;
                             else
-                                Distance=(Distance<<8)+(byte)Ch;
+                                Distance = (Distance<<8) + (byte)Ch;
                     }
                     if (Failed)
                         break;
@@ -303,11 +303,12 @@ void Unpack::Unpack29(bool Solid)
                 // If we are here, NextCh must be 1, what means that current byte
                 // is equal to our 'escape' byte, so we just store it to Window.
             }
-            Window[UnpPtr++]=Ch;
+            Window[UnpPtr++] = Ch;
             continue;
         }
 
-        int Number=DecodeNumber(&LD);
+        int Number = DecodeNumber(&LD);
+
         if (Number<256)
         {
             Window[UnpPtr++]=(byte)Number;
@@ -442,25 +443,26 @@ bool Unpack::ReadEndOfBlock()
         NewTable=(BitField & 0x4000)!=0;
         addbits(2);
     }
-    TablesRead=!NewTable;
+
+    TablesRead = !NewTable;
     return !(NewFile || NewTable && !ReadTables());
 }
 
 
 bool Unpack::ReadVMCode()
 {
-    unsigned int FirstByte=getbits()>>8;
+    unsigned int FirstByte = getbits() >> 8;
     addbits(8);
-    int Length=(FirstByte & 7)+1;
+    int Length = (FirstByte & 7) + 1;
     if (Length == 7)
     {
-        Length=(getbits()>>8)+7;
+        Length = (getbits() >> 8) + 7;
         addbits(8);
     }
     else
         if (Length == 8)
         {
-            Length=getbits();
+            Length = getbits();
             addbits(16);
         }
     Array<byte> VMCode(Length);
@@ -468,12 +470,14 @@ bool Unpack::ReadVMCode()
     {
         // Try to read the new buffer if only one byte is left.
         // But if we read all bytes except the last, one byte is enough.
-        if (InAddr>=ReadTop-1 && !UnpReadBuf() && I<Length-1)
+        if ( (InAddr >= ReadTop-1) &&
+             (!UnpReadBuf()) &&
+             (I < (Length-1))  )
             return(false);
-        VMCode[I]=getbits()>>8;
+        VMCode[I] = getbits() >> 8;
         addbits(8);
     }
-    return(AddVMCode(FirstByte,&VMCode[0], Length));
+    return(AddVMCode(FirstByte, &VMCode[0], Length));
 }
 
 
