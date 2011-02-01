@@ -24,11 +24,11 @@ Unpack::~Unpack()
 
 void Unpack::Init(byte *Window)
 {
-    if (Window==NULL)
+    if (Window == NULL)
     {
         Unpack::Window=new byte[MAXWINSIZE];
 #ifndef ALLOW_EXCEPTIONS
-        if (Unpack::Window==NULL)
+        if (Unpack::Window == NULL)
             ErrHandler.MemoryError();
 #endif
     }
@@ -176,7 +176,7 @@ _forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
 inline int Unpack::SafePPMDecodeChar()
 {
     int ch = m_ppm.DecodeChar();
-    if (ch == -1 )              // Corrupt PPM data found.
+    if (ch  ==  -1 )              // Corrupt PPM data found.
     {
         m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
         UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
@@ -196,7 +196,7 @@ void Unpack::Unpack29(bool Solid)
     static unsigned char SDBits[]=  {2, 2, 3, 4, 5, 6, 6, 6};
     unsigned int Bits;
 
-    if (DDecode[1]==0)
+    if (DDecode[1] == 0)
     {
         int Dist=0, BitLength=0, Slot=0;
         for (int I=0;I<sizeof(DBitLengthCounts)/sizeof(DBitLengthCounts[0]);I++, BitLength++)
@@ -239,48 +239,48 @@ void Unpack::Unpack29(bool Solid)
                 FileExtracted = false;
                 return;
         }
-        if (UnpBlockType==BLOCK_PPM)
+        if (UnpBlockType == BLOCK_PPM)
         {
             // Here speed is critical, so we do not use SafePPMDecodeChar,
             // because sometimes even the inline function can introduce
             // some additional penalty.
             int Ch=m_ppm.DecodeChar();
-            if (Ch==-1)              // Corrupt PPM data found.
+            if (Ch == -1)              // Corrupt PPM data found.
             {
                 m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
                 UnpBlockType=BLOCK_LZ; // Set faster and more fail proof LZ mode.
                 break;
             }
-            if (Ch==PPMEscChar)
+            if (Ch == PPMEscChar)
             {
                 int NextCh=SafePPMDecodeChar();
-                if (NextCh==0)  // End of PPM encoding.
+                if (NextCh == 0)  // End of PPM encoding.
                 {
                     if (!ReadTables())
                         break;
                     continue;
                 }
-                if (NextCh==-1) // Corrupt PPM data found.
+                if (NextCh == -1) // Corrupt PPM data found.
                     break;
-                if (NextCh==2)  // End of file in PPM mode..
+                if (NextCh == 2)  // End of file in PPM mode..
                     break;
-                if (NextCh==3)  // Read VM code.
+                if (NextCh == 3)  // Read VM code.
                 {
                     if (!ReadVMCodePPM())
                         break;
                     continue;
                 }
-                if (NextCh==4) // LZ inside of m_ppm.
+                if (NextCh == 4) // LZ inside of m_ppm.
                 {
                     unsigned int Distance=0, Length;
                     bool Failed=false;
                     for (int I=0;I<4 && !Failed;I++)
                     {
                         int Ch=SafePPMDecodeChar();
-                        if (Ch==-1)
+                        if (Ch == -1)
                             Failed=true;
                         else
-                            if (I==3)
+                            if (I == 3)
                                 Length=(byte)Ch;
                             else
                                 Distance=(Distance<<8)+(byte)Ch;
@@ -291,10 +291,10 @@ void Unpack::Unpack29(bool Solid)
                     CopyString(Length+32, Distance+2);
                     continue;
                 }
-                if (NextCh==5) // One byte distance match (RLE) inside of m_ppm.
+                if (NextCh == 5) // One byte distance match (RLE) inside of m_ppm.
                 {
                     int Length=SafePPMDecodeChar();
-                    if (Length==-1)
+                    if (Length == -1)
                         break;
                     CopyString(Length+4, 1);
                     continue;
@@ -340,7 +340,7 @@ void Unpack::Unpack29(bool Solid)
                     else
                     {
                         int LowDist=DecodeNumber(&LDD);
-                        if (LowDist==16)
+                        if (LowDist == 16)
                         {
                             LowDistRepCount=LOW_DIST_REP_COUNT-1;
                             Distance+=PrevLowDist;
@@ -371,19 +371,19 @@ void Unpack::Unpack29(bool Solid)
             CopyString(Length, Distance);
             continue;
         }
-        if (Number==256)
+        if (Number == 256)
         {
             if (!ReadEndOfBlock())
                 break;
             continue;
         }
-        if (Number==257)
+        if (Number == 257)
         {
             if (!ReadVMCode())
                 break;
             continue;
         }
-        if (Number==258)
+        if (Number == 258)
         {
             if (LastLength!=0)
                 CopyString(LastLength, LastDist);
@@ -451,13 +451,13 @@ bool Unpack::ReadVMCode()
     unsigned int FirstByte=getbits()>>8;
     addbits(8);
     int Length=(FirstByte & 7)+1;
-    if (Length==7)
+    if (Length == 7)
     {
         Length=(getbits()>>8)+7;
         addbits(8);
     }
     else
-        if (Length==8)
+        if (Length == 8)
         {
             Length=getbits();
             addbits(16);
@@ -479,24 +479,24 @@ bool Unpack::ReadVMCode()
 bool Unpack::ReadVMCodePPM()
 {
     unsigned int FirstByte=SafePPMDecodeChar();
-    if ((int)FirstByte==-1)
+    if ((int)FirstByte == -1)
         return(false);
     int Length=(FirstByte & 7)+1;
-    if (Length==7)
+    if (Length == 7)
     {
         int B1=SafePPMDecodeChar();
-        if (B1==-1)
+        if (B1 == -1)
             return(false);
         Length=B1+7;
     }
     else
-        if (Length==8)
+        if (Length == 8)
         {
             int B1=SafePPMDecodeChar();
-            if (B1==-1)
+            if (B1 == -1)
                 return(false);
             int B2=SafePPMDecodeChar();
-            if (B2==-1)
+            if (B2 == -1)
                 return(false);
             Length=B1*256+B2;
         }
@@ -504,7 +504,7 @@ bool Unpack::ReadVMCodePPM()
     for (int I=0;I<Length;I++)
     {
         int Ch=SafePPMDecodeChar();
-        if (Ch==-1)
+        if (Ch == -1)
             return(false);
         VMCode[I]=Ch;
     }
@@ -523,7 +523,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     if (FirstByte & 0x80)
     {
         FiltPos=RarVM::ReadData(Inp);
-        if (FiltPos==0)
+        if (FiltPos == 0)
             InitFilters();
         else
             FiltPos--;
@@ -534,7 +534,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     if (FiltPos>Filters.Size() || FiltPos>OldFilterLengths.Size())
         return(false);
     LastFilter=FiltPos;
-    bool NewFilter=(FiltPos==Filters.Size());
+    bool NewFilter=(FiltPos == Filters.Size());
 
     UnpackFilter *StackFilter=new UnpackFilter; // new filter for PrgStack
 
@@ -562,12 +562,12 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     for (uint I=0;I<PrgStack.Size();I++)
     {
         PrgStack[I-EmptyCount]=PrgStack[I];
-        if (PrgStack[I]==NULL)
+        if (PrgStack[I] == NULL)
             EmptyCount++;
         if (EmptyCount>0)
             PrgStack[I]=NULL;
     }
-    if (EmptyCount==0)
+    if (EmptyCount == 0)
     {
         PrgStack.Add(1);
         EmptyCount=1;
@@ -607,7 +607,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     if (NewFilter)
     {
         uint VMCodeSize=RarVM::ReadData(Inp);
-        if (VMCodeSize>=0x10000 || VMCodeSize==0)
+        if (VMCodeSize>=0x10000 || VMCodeSize == 0)
             return(false);
         Array<byte> VMCode(VMCodeSize);
         for (uint I=0;I<VMCodeSize;I++)
@@ -703,7 +703,7 @@ void Unpack::UnpWriteBuf()
         // preserve them in original form.
 
         UnpackFilter *flt=PrgStack[I];
-        if (flt==NULL)
+        if (flt == NULL)
             continue;
         if (flt->NextWindow)
         {
@@ -723,7 +723,7 @@ void Unpack::UnpWriteBuf()
             if (BlockLength<=WriteSize)
             {
                 unsigned int BlockEnd=(BlockStart+BlockLength)&MAXWINMASK;
-                if (BlockStart<BlockEnd || BlockEnd==0)
+                if (BlockStart<BlockEnd || BlockEnd == 0)
                     m_vm.SetMemory(0, Window+BlockStart, BlockLength);
                 else
                 {
@@ -762,7 +762,7 @@ void Unpack::UnpWriteBuf()
                 while (I+1<PrgStack.Size())
                 {
                     UnpackFilter *NextFilter=PrgStack[I+1];
-                    if (NextFilter==NULL || NextFilter->BlockStart!=BlockStart ||
+                    if (NextFilter == NULL || NextFilter->BlockStart!=BlockStart ||
                             NextFilter->BlockLength!=FilteredDataSize || NextFilter->NextWindow)
                         break;
 
@@ -890,11 +890,11 @@ bool Unpack::ReadTables()
     {
         int Length=(byte)(fgetbits() >> 12);
         faddbits(4);
-        if (Length==15)
+        if (Length == 15)
         {
             int ZeroCount=(byte)(fgetbits() >> 12);
             faddbits(4);
-            if (ZeroCount==0)
+            if (ZeroCount == 0)
                 BitLength[I]=15;
             else
             {
@@ -925,7 +925,7 @@ bool Unpack::ReadTables()
             if (Number<18)
             {
                 int N;
-                if (Number==16)
+                if (Number == 16)
                 {
                     N=(fgetbits() >> 13)+3;
                     faddbits(3);
@@ -944,7 +944,7 @@ bool Unpack::ReadTables()
             else
             {
                 int N;
-                if (Number==18)
+                if (Number == 18)
                 {
                     N=(fgetbits() >> 13)+3;
                     faddbits(3);
