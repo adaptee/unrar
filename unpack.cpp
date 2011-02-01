@@ -479,7 +479,8 @@ bool Unpack::ReadVMCode()
         if ( (InAddr >= ReadTop-1) &&
              (!UnpReadBuf()) &&
              (i < (Length-1))  )
-            return(false);
+            return false;
+
         VMCode[i] = getbits() >> 8;
         addbits(8);
     }
@@ -491,14 +492,14 @@ bool Unpack::ReadVMCodePPM()
 {
     unsigned int FirstByte = SafePPMDecodeChar();
     if ((int)FirstByte == -1)
-        return(false);
+        return false;
 
     int Length = (FirstByte & 7)+1;
     if (Length == 7)
     {
         int B1 = SafePPMDecodeChar();
         if (B1 == -1)
-            return(false);
+            return false;
         Length = B1+7;
     }
     else
@@ -506,10 +507,10 @@ bool Unpack::ReadVMCodePPM()
         {
             int B1 = SafePPMDecodeChar();
             if (B1 == -1)
-                return(false);
+                return false;
             int B2 = SafePPMDecodeChar();
             if (B2 == -1)
-                return(false);
+                return false;
             Length = B1*256+B2;
         }
     Array<byte> VMCode(Length);
@@ -517,7 +518,7 @@ bool Unpack::ReadVMCodePPM()
     {
         int Ch = SafePPMDecodeChar();
         if (Ch == -1)
-            return(false);
+            return false;
         VMCode[i] = Ch;
     }
     return(AddVMCode(FirstByte,&VMCode[0], Length));
@@ -546,7 +547,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     }
 
     if (FiltPos > Filters.Size() || FiltPos > OldFilterLengths.Size())
-        return(false);
+        return false;
     LastFilter = FiltPos;
     bool NewFilter = (FiltPos == Filters.Size());
 
@@ -557,99 +558,100 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     {
         // Too many different filters, corrupt archive.
         if (FiltPos > 1024)
-            return(false);
+            return false;
 
         Filters.Add(1);
         Filters[Filters.Size()-1]=Filter=new UnpackFilter;
-        StackFilter->ParentFilter=(uint)(Filters.Size()-1);
+        StackFilter->ParentFilter = (uint)(Filters.Size()-1);
         OldFilterLengths.Add(1);
-        Filter->ExecCount=0;
+        Filter->ExecCount = 0;
     }
     else  // filter was used in the past
     {
         Filter = Filters[FiltPos];
-        StackFilter->ParentFilter=FiltPos;
+        StackFilter->ParentFilter = FiltPos;
         Filter->ExecCount++;
     }
 
     int EmptyCount = 0;
     for (uint i=0;i<PrgStack.Size();i++)
     {
-        PrgStack[i-EmptyCount]=PrgStack[i];
+        PrgStack[i-EmptyCount] = PrgStack[i];
         if (PrgStack[i] == NULL)
             EmptyCount++;
         if (EmptyCount>0)
-            PrgStack[i]=NULL;
+            PrgStack[i] = NULL;
     }
     if (EmptyCount == 0)
     {
         PrgStack.Add(1);
-        EmptyCount=1;
+        EmptyCount = 1;
     }
-    int StackPos=(int)(PrgStack.Size()-EmptyCount);
-    PrgStack[StackPos]=StackFilter;
-    StackFilter->ExecCount=Filter->ExecCount;
+    int StackPos = (int)(PrgStack.Size() - EmptyCount);
+    PrgStack[StackPos] = StackFilter;
+    StackFilter->ExecCount = Filter->ExecCount;
 
-    uint BlockStart=RarVM::ReadData(Inp);
+    uint BlockStart = RarVM::ReadData(Inp);
     if (FirstByte & 0x40)
-        BlockStart+=258;
-    StackFilter->BlockStart=(BlockStart+UnpPtr)&MAXWINMASK;
+        BlockStart += 258;
+    StackFilter->BlockStart = (BlockStart + UnpPtr) & MAXWINMASK;
+
     if (FirstByte & 0x20)
-        StackFilter->BlockLength=RarVM::ReadData(Inp);
+        StackFilter->BlockLength = RarVM::ReadData(Inp);
     else
-        StackFilter->BlockLength=FiltPos<OldFilterLengths.Size() ? OldFilterLengths[FiltPos]:0;
+        StackFilter->BlockLength = FiltPos < OldFilterLengths.Size() ? OldFilterLengths[FiltPos] : 0;
     StackFilter->NextWindow=WrPtr!=UnpPtr && ((WrPtr-UnpPtr)&MAXWINMASK)<=BlockStart;
 
     //  DebugLog("\nNextWindow: UnpPtr=%08x WrPtr=%08x BlockStart=%08x", UnpPtr, WrPtr, BlockStart);
 
-    OldFilterLengths[FiltPos]=StackFilter->BlockLength;
+    OldFilterLengths[FiltPos] = StackFilter->BlockLength;
 
     memset(StackFilter->Prg.InitR, 0, sizeof(StackFilter->Prg.InitR));
-    StackFilter->Prg.InitR[3]=VM_GLOBALMEMADDR;
-    StackFilter->Prg.InitR[4]=StackFilter->BlockLength;
-    StackFilter->Prg.InitR[5]=StackFilter->ExecCount;
+    StackFilter->Prg.InitR[3] = VM_GLOBALMEMADDR;
+    StackFilter->Prg.InitR[4] = StackFilter->BlockLength;
+    StackFilter->Prg.InitR[5] = StackFilter->ExecCount;
 
     if (FirstByte & 0x10)   // set registers to optional parameters if any
     {
-        unsigned int InitMask=Inp.fgetbits()>>9;
+        unsigned int InitMask = Inp.fgetbits()>>9;
         Inp.faddbits(7);
         for (int i=0;i<7;i++)
             if (InitMask & (1<<i))
-                StackFilter->Prg.InitR[i]=RarVM::ReadData(Inp);
+                StackFilter->Prg.InitR[i] = RarVM::ReadData(Inp);
     }
 
     if (NewFilter)
     {
-        uint VMCodeSize=RarVM::ReadData(Inp);
-        if (VMCodeSize>=0x10000 || VMCodeSize == 0)
-            return(false);
+        uint VMCodeSize = RarVM::ReadData(Inp);
+        if (VMCodeSize >= 0x10000 || VMCodeSize == 0)
+            return false;
         Array<byte> VMCode(VMCodeSize);
         for (uint i=0;i<VMCodeSize;i++)
         {
             if (Inp.Overflow(3))
-                return(false);
-            VMCode[i]=Inp.fgetbits()>>8;
+                return false;
+            VMCode[i] = (Inp.fgetbits() >> 8);
             Inp.faddbits(8);
         }
         m_vm.Prepare(&VMCode[0], VMCodeSize,&Filter->Prg);
     }
-    StackFilter->Prg.AltCmd=&Filter->Prg.Cmd[0];
-    StackFilter->Prg.CmdCount=Filter->Prg.CmdCount;
+    StackFilter->Prg.AltCmd   = & (Filter->Prg.Cmd[0]);
+    StackFilter->Prg.CmdCount = Filter->Prg.CmdCount;
 
-    size_t StaticDataSize=Filter->Prg.StaticData.Size();
-    if (StaticDataSize>0 && StaticDataSize<VM_GLOBALMEMSIZE)
+    size_t StaticDataSize = Filter->Prg.StaticData.Size();
+    if ( StaticDataSize > 0 && StaticDataSize < VM_GLOBALMEMSIZE)
     {
         // read statically defined data contained in DB commands
         StackFilter->Prg.StaticData.Add(StaticDataSize);
         memcpy(&StackFilter->Prg.StaticData[0],&Filter->Prg.StaticData[0], StaticDataSize);
     }
 
-    if (StackFilter->Prg.GlobalData.Size()<VM_FIXEDGLOBALSIZE)
+    if (StackFilter->Prg.GlobalData.Size() <  VM_FIXEDGLOBALSIZE)
     {
         StackFilter->Prg.GlobalData.Reset();
         StackFilter->Prg.GlobalData.Add(VM_FIXEDGLOBALSIZE);
     }
-    byte *GlobalData=&StackFilter->Prg.GlobalData[0];
+    byte *GlobalData = &StackFilter->Prg.GlobalData[0];
     for (int i=0;i<7;i++)
         m_vm.SetLowEndianValue((uint *)&GlobalData[i*4], StackFilter->Prg.InitR[i]);
     m_vm.SetLowEndianValue((uint *)&GlobalData[0x1c], StackFilter->BlockLength);
@@ -660,54 +662,61 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     if (FirstByte & 8) // put data block passed as parameter if any
     {
         if (Inp.Overflow(3))
-            return(false);
-        uint DataSize=RarVM::ReadData(Inp);
-        if (DataSize>VM_GLOBALMEMSIZE-VM_FIXEDGLOBALSIZE)
-            return(false);
-        size_t CurSize=StackFilter->Prg.GlobalData.Size();
+            return false;
+        uint DataSize = RarVM::ReadData(Inp);
+        if (DataSize > VM_GLOBALMEMSIZE - VM_FIXEDGLOBALSIZE)
+            return false;
+        size_t CurSize = StackFilter->Prg.GlobalData.Size();
         if (CurSize<DataSize+VM_FIXEDGLOBALSIZE)
             StackFilter->Prg.GlobalData.Add(DataSize+VM_FIXEDGLOBALSIZE-CurSize);
-        byte *GlobalData=&StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
+        byte *GlobalData = &StackFilter->Prg.GlobalData[VM_FIXEDGLOBALSIZE];
         for (uint i=0;i<DataSize;i++)
         {
             if (Inp.Overflow(3))
-                return(false);
-            GlobalData[i]=Inp.fgetbits()>>8;
+                return false;
+            GlobalData[i] = (Inp.fgetbits() >> 8);
             Inp.faddbits(8);
         }
     }
-    return(true);
+    return true;
 }
 
 
 bool Unpack::UnpReadBuf()
 {
-    int DataSize=ReadTop-InAddr; // Data left to process.
-    if (DataSize<0)
-        return(false);
-    if (InAddr>BitInput::MAX_SIZE/2)
+    int DataSize = ReadTop - InAddr; // Data left to process.
+    if (DataSize < 0)
+        return false;
+
+    if (InAddr > BitInput::MAX_SIZE/2)
     {
         // If we already processed more than half of buffer, let's move
         // remaining data into beginning to free more space for new data.
-        if (DataSize>0)
+        if (DataSize > 0)
             memmove(InBuf, InBuf+InAddr, DataSize);
-        InAddr=0;
-        ReadTop=DataSize;
+        InAddr  = 0;
+        ReadTop = DataSize;
     }
     else
-        DataSize=ReadTop;
+    {
+        DataSize = ReadTop;
+    }
+
     int ReadCode=m_io->UnpRead(InBuf+DataSize,(BitInput::MAX_SIZE-DataSize)&~0xf);
-    if (ReadCode>0)
-        ReadTop+=ReadCode;
-    ReadBorder=ReadTop-30;
-    return(ReadCode!=-1);
+
+    if (ReadCode > 0)
+        ReadTop += ReadCode;
+
+    ReadBorder = ReadTop-30;
+
+    return (ReadCode != -1);
 }
 
 
 void Unpack::UnpWriteBuf()
 {
-    unsigned int WrittenBorder=WrPtr;
-    unsigned int WriteSize=(UnpPtr-WrittenBorder)&MAXWINMASK;
+    unsigned int WrittenBorder = WrPtr;
+    unsigned int WriteSize     = (UnpPtr - WrittenBorder) & MAXWINMASK;
     for (size_t i=0;i<PrgStack.Size();i++)
     {
         // Here we apply filters to data which we need to write.
@@ -716,40 +725,40 @@ void Unpack::UnpWriteBuf()
         // these data can be used for future string matches, so we must
         // preserve them in original form.
 
-        UnpackFilter *flt=PrgStack[i];
+        UnpackFilter * flt = PrgStack[i];
         if (flt == NULL)
             continue;
         if (flt->NextWindow)
         {
-            flt->NextWindow=false;
+            flt->NextWindow = false;
             continue;
         }
-        unsigned int BlockStart=flt->BlockStart;
-        unsigned int BlockLength=flt->BlockLength;
-        if (((BlockStart-WrittenBorder)&MAXWINMASK)<WriteSize)
+        unsigned int BlockStart  = flt->BlockStart;
+        unsigned int BlockLength = flt->BlockLength;
+        if (((BlockStart - WrittenBorder) & MAXWINMASK) < WriteSize)
         {
-            if (WrittenBorder!=BlockStart)
+            if (WrittenBorder != BlockStart)
             {
                 UnpWriteArea(WrittenBorder, BlockStart);
-                WrittenBorder=BlockStart;
-                WriteSize=(UnpPtr-WrittenBorder)&MAXWINMASK;
+                WrittenBorder = BlockStart;
+                WriteSize     = (UnpPtr - WrittenBorder) & MAXWINMASK;
             }
-            if (BlockLength<=WriteSize)
+            if (BlockLength <= WriteSize)
             {
-                unsigned int BlockEnd=(BlockStart+BlockLength)&MAXWINMASK;
-                if (BlockStart<BlockEnd || BlockEnd == 0)
+                unsigned int BlockEnd = (BlockStart + BlockLength) & MAXWINMASK;
+                if (BlockStart < BlockEnd || BlockEnd == 0)
                     m_vm.SetMemory(0, Window+BlockStart, BlockLength);
                 else
                 {
-                    unsigned int FirstPartLength=MAXWINSIZE-BlockStart;
+                    unsigned int FirstPartLength = MAXWINSIZE - BlockStart;
                     m_vm.SetMemory(0, Window+BlockStart, FirstPartLength);
                     m_vm.SetMemory(FirstPartLength, Window, BlockEnd);
                 }
 
-                VM_PreparedProgram *ParentPrg=&Filters[flt->ParentFilter]->Prg;
-                VM_PreparedProgram *Prg=&flt->Prg;
+                VM_PreparedProgram *ParentPrg = &Filters[flt->ParentFilter]->Prg;
+                VM_PreparedProgram *Prg = &flt->Prg;
 
-                if (ParentPrg->GlobalData.Size()>VM_FIXEDGLOBALSIZE)
+                if (ParentPrg->GlobalData.Size() > VM_FIXEDGLOBALSIZE)
                 {
                     // Copy global data from previous script execution if any.
                     Prg->GlobalData.Alloc(ParentPrg->GlobalData.Size());
@@ -758,7 +767,7 @@ void Unpack::UnpWriteBuf()
 
                 ExecuteCode(Prg);
 
-                if (Prg->GlobalData.Size()>VM_FIXEDGLOBALSIZE)
+                if (Prg->GlobalData.Size() > VM_FIXEDGLOBALSIZE)
                 {
                     // Save global data for next script execution.
                     if (ParentPrg->GlobalData.Size()<Prg->GlobalData.Size())
@@ -768,14 +777,14 @@ void Unpack::UnpWriteBuf()
                 else
                     ParentPrg->GlobalData.Reset();
 
-                byte *FilteredData=Prg->FilteredData;
-                unsigned int FilteredDataSize=Prg->FilteredDataSize;
+                byte * FilteredData = Prg->FilteredData;
+                unsigned int FilteredDataSize = Prg->FilteredDataSize;
 
                 delete PrgStack[i];
-                PrgStack[i]=NULL;
-                while (i+1<PrgStack.Size())
+                PrgStack[i] = NULL;
+                while (i+1 < PrgStack.Size())
                 {
-                    UnpackFilter *NextFilter=PrgStack[i+1];
+                    UnpackFilter *NextFilter = PrgStack[i+1];
                     if (NextFilter == NULL || NextFilter->BlockStart!=BlockStart ||
                             NextFilter->BlockLength!=FilteredDataSize || NextFilter->NextWindow)
                         break;
@@ -784,8 +793,8 @@ void Unpack::UnpWriteBuf()
 
                     m_vm.SetMemory(0, FilteredData, FilteredDataSize);
 
-                    VM_PreparedProgram *ParentPrg=&Filters[NextFilter->ParentFilter]->Prg;
-                    VM_PreparedProgram *NextPrg=&NextFilter->Prg;
+                    VM_PreparedProgram *ParentPrg = &Filters[NextFilter->ParentFilter]->Prg;
+                    VM_PreparedProgram *NextPrg   = &NextFilter->Prg;
 
                     if (ParentPrg->GlobalData.Size()>VM_FIXEDGLOBALSIZE)
                     {
@@ -806,34 +815,34 @@ void Unpack::UnpWriteBuf()
                     else
                         ParentPrg->GlobalData.Reset();
 
-                    FilteredData=NextPrg->FilteredData;
-                    FilteredDataSize=NextPrg->FilteredDataSize;
+                    FilteredData     = NextPrg->FilteredData;
+                    FilteredDataSize = NextPrg->FilteredDataSize;
                     i++;
                     delete PrgStack[i];
-                    PrgStack[i]=NULL;
+                    PrgStack[i] = NULL;
                 }
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
-                UnpSomeRead=true;
-                WrittenFileSize+=FilteredDataSize;
-                WrittenBorder=BlockEnd;
-                WriteSize=(UnpPtr-WrittenBorder)&MAXWINMASK;
+                UnpSomeRead = true;
+                WrittenFileSize += FilteredDataSize;
+                WrittenBorder = BlockEnd;
+                WriteSize     = (UnpPtr-WrittenBorder)&MAXWINMASK;
             }
             else
             {
                 for (size_t J=i;J<PrgStack.Size();J++)
                 {
-                    UnpackFilter *flt=PrgStack[J];
+                    UnpackFilter * flt = PrgStack[J];
                     if (flt!=NULL && flt->NextWindow)
                         flt->NextWindow=false;
                 }
-                WrPtr=WrittenBorder;
+                WrPtr = WrittenBorder;
                 return;
             }
         }
     }
 
     UnpWriteArea(WrittenBorder, UnpPtr);
-    WrPtr=UnpPtr;
+    WrPtr = UnpPtr;
 }
 
 
@@ -851,13 +860,13 @@ void Unpack::ExecuteCode(VM_PreparedProgram *Prg)
 
 void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 {
-    if (EndPtr!=StartPtr)
-        UnpSomeRead=true;
-    if (EndPtr<StartPtr)
+    if (EndPtr != StartPtr)
+        UnpSomeRead = true;
+    if (EndPtr < StartPtr)
     {
-        UnpWriteData(&Window[StartPtr],-(int)StartPtr & MAXWINMASK);
+        UnpWriteData(&Window[StartPtr], -(int)StartPtr & MAXWINMASK);
         UnpWriteData(Window, EndPtr);
-        UnpAllBuf=true;
+        UnpAllBuf = true;
     }
     else
         UnpWriteData(&Window[StartPtr], EndPtr-StartPtr);
@@ -866,14 +875,16 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 
 void Unpack::UnpWriteData(byte *Data, size_t Size)
 {
-    if (WrittenFileSize>=DestUnpSize)
+    if (WrittenFileSize >= DestUnpSize)
         return;
-    size_t WriteSize=Size;
-    int64 LeftToWrite=DestUnpSize-WrittenFileSize;
-    if ((int64)WriteSize>LeftToWrite)
-        WriteSize=(size_t)LeftToWrite;
+
+    size_t WriteSize = Size;
+    int64 LeftToWrite = DestUnpSize - WrittenFileSize;
+    if ((int64)WriteSize > LeftToWrite)
+        WriteSize = (size_t)LeftToWrite;
+
     m_io->UnpWrite(Data, WriteSize);
-    WrittenFileSize+=Size;
+    WrittenFileSize += Size;
 }
 
 
@@ -881,20 +892,23 @@ bool Unpack::ReadTables()
 {
     byte BitLength[BC];
     byte Table[HUFF_TABLE_SIZE];
-    if (InAddr>ReadTop-25)
+
+    if (InAddr > ReadTop-25)
         if (!UnpReadBuf())
-            return(false);
-    faddbits((8-InBit)&7);
-    uint BitField=fgetbits();
+            return false;
+
+    faddbits((8-InBit) & 7);
+    uint BitField = fgetbits();
+
     if (BitField & 0x8000)
     {
-        UnpBlockType=BLOCK_PPM;
+        UnpBlockType = BLOCK_PPM;
         return(m_ppm.DecodeInit(this, PPMEscChar));
     }
-    UnpBlockType=BLOCK_LZ;
 
-    PrevLowDist=0;
-    LowDistRepCount=0;
+    UnpBlockType    = BLOCK_LZ;
+    PrevLowDist     = 0;
+    LowDistRepCount = 0;
 
     if (!(BitField & 0x4000))
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
@@ -902,56 +916,60 @@ bool Unpack::ReadTables()
 
     for (int i=0;i<BC;i++)
     {
-        int Length=(byte)(fgetbits() >> 12);
+        int Length = (byte)(fgetbits() >> 12);
         faddbits(4);
         if (Length == 15)
         {
-            int ZeroCount=(byte)(fgetbits() >> 12);
+            int ZeroCount = (byte)(fgetbits() >> 12);
             faddbits(4);
             if (ZeroCount == 0)
-                BitLength[i]=15;
+                BitLength[i] = 15;
             else
             {
-                ZeroCount+=2;
-                while (ZeroCount-- > 0 && i<sizeof(BitLength)/sizeof(BitLength[0]))
-                    BitLength[i++]=0;
+                ZeroCount += 2;
+                while (ZeroCount-- > 0 && i < sizeof(BitLength)/sizeof(BitLength[0]))
+                    BitLength[i++] = 0;
                 i--;
             }
         }
         else
+        {
             BitLength[i]=Length;
+        }
     }
+
     MakeDecodeTables(BitLength,&BD, BC);
 
-    const int TableSize=HUFF_TABLE_SIZE;
+    const int TableSize = HUFF_TABLE_SIZE;
     for (int i=0;i<TableSize;)
     {
-        if (InAddr>ReadTop-5)
+        if (InAddr > ReadTop-5)
             if (!UnpReadBuf())
-                return(false);
-        int Number=DecodeNumber(&BD);
-        if (Number<16)
+                return false;
+
+        int Number = DecodeNumber(&BD);
+        if (Number < 16)
         {
-            Table[i]=(Number+UnpOldTable[i]) & 0xf;
+            Table[i] = (Number + UnpOldTable[i]) & 0xf;
             i++;
         }
         else
-            if (Number<18)
+            if (Number < 18)
             {
                 int N;
                 if (Number == 16)
                 {
-                    N=(fgetbits() >> 13)+3;
+                    N = (fgetbits() >> 13) + 3;
                     faddbits(3);
                 }
                 else
                 {
-                    N=(fgetbits() >> 9)+11;
+                    N=(fgetbits() >> 9) + 11;
                     faddbits(7);
                 }
                 while (N-- > 0 && i<TableSize)
                 {
-                    Table[i]=Table[i-1];
+                    Table[i] = Table[i-1];
                     i++;
                 }
             }
@@ -960,27 +978,28 @@ bool Unpack::ReadTables()
                 int N;
                 if (Number == 18)
                 {
-                    N=(fgetbits() >> 13)+3;
+                    N=(fgetbits() >> 13) + 3;
                     faddbits(3);
                 }
                 else
                 {
-                    N=(fgetbits() >> 9)+11;
+                    N=(fgetbits() >> 9) + 11;
                     faddbits(7);
                 }
-                while (N-- > 0 && i<TableSize)
-                    Table[i++]=0;
+                while (N-- > 0 && i < TableSize)
+                    Table[i++] = 0;
             }
     }
-    TablesRead=true;
-    if (InAddr>ReadTop)
-        return(false);
-    MakeDecodeTables(&Table[0],&LD, NC);
-    MakeDecodeTables(&Table[NC],&DD, DC);
-    MakeDecodeTables(&Table[NC+DC],&LDD, LDC);
-    MakeDecodeTables(&Table[NC+DC+LDC],&RD, RC);
+    TablesRead = true;
+    if (InAddr > ReadTop)
+        return false;
+
+    MakeDecodeTables(&Table[0], &LD, NC);
+    MakeDecodeTables(&Table[NC], &DD, DC);
+    MakeDecodeTables(&Table[NC+DC], &LDD, LDC);
+    MakeDecodeTables(&Table[NC+DC+LDC], &RD, RC);
     memcpy(UnpOldTable, Table, sizeof(UnpOldTable));
-    return(true);
+    return true;
 }
 
 
@@ -992,6 +1011,7 @@ void Unpack::UnpInitData(int Solid)
         memset(OldDist, 0, sizeof(OldDist));
         OldDistPtr = 0;
         LastDist=LastLength=0;
+
         //    memset(Window, 0, MAXWINSIZE);
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
         memset(&LD, 0, sizeof(LD));
@@ -999,6 +1019,7 @@ void Unpack::UnpInitData(int Solid)
         memset(&LDD, 0, sizeof(LDD));
         memset(&RD, 0, sizeof(RD));
         memset(&BD, 0, sizeof(BD));
+
         UnpPtr=WrPtr=0;
         PPMEscChar = 2;
         UnpBlockType = BLOCK_LZ;
@@ -1047,7 +1068,7 @@ void Unpack::MakeDecodeTables(byte *LengthTable, DecodeTable *Dec, uint Size)
     LengthCount[0] = 0;
 
     // Set the entire DecodeNum to zero.
-    memset(Dec->DecodeNum, 0, Size*sizeof(*Dec->DecodeNum));
+    memset(Dec->DecodeNum, 0, Size * sizeof(*Dec->DecodeNum));
 
     // Initialize not really used entry for zero length code.
     Dec->DecodePos[0] = 0;
