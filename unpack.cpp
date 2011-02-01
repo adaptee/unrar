@@ -207,19 +207,25 @@ void Unpack::Unpack29(bool Solid)
             }
     }
 
-    FileExtracted=true;
+    FileExtracted = true;
 
     UnpInitData(Solid);
+
     if (!UnpReadBuf())
         return;
-    if ((!Solid || !TablesRead) && !ReadTables())
-        return;
+
+    if ((!Solid || !TablesRead))
+    {
+        bool ok = ReadTables();
+        if( ! ok )
+            return;
+    }
 
     while (true)
     {
-        UnpPtr&=MAXWINMASK;
+        UnpPtr &= MAXWINMASK;
 
-        if (InAddr>ReadBorder)
+        if (InAddr > ReadBorder)
         {
             if (!UnpReadBuf())
                 break;
