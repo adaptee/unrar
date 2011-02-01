@@ -8,16 +8,8 @@ int main(int argc, char *argv[])
   setlocale(LC_ALL,"");
 #endif
 
-#if defined(_EMX) && !defined(_DJGPP)
-  uni_init(0);
-#endif
-
 #if !defined(_SFX_RTL_) && !defined(_WIN_ALL)
   setbuf(stdout, NULL);
-#endif
-
-#if !defined(SFX_MODULE) && defined(_EMX)
-  EnumConfigPaths(argv[0],-1);
 #endif
 
   ErrHandler.SetSignalHandlers(true);
