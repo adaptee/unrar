@@ -101,7 +101,7 @@ private:
     bool AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize);
     void InitFilters();
 
-    ComprDataIO *UnpIO;
+    ComprDataIO * m_io;
     ModelPPM m_ppm;
     int PPMEscChar;
 

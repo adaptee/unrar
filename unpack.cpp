@@ -6,7 +6,7 @@
 
 Unpack::Unpack(ComprDataIO *DataIO)
 {
-    UnpIO=DataIO;
+    m_io=DataIO;
     Window=NULL;
     m_useExternalWindow=false;
     UnpAllBuf=false;
@@ -676,7 +676,7 @@ bool Unpack::UnpReadBuf()
     }
     else
         DataSize=ReadTop;
-    int ReadCode=UnpIO->UnpRead(InBuf+DataSize,(BitInput::MAX_SIZE-DataSize)&~0xf);
+    int ReadCode=m_io->UnpRead(InBuf+DataSize,(BitInput::MAX_SIZE-DataSize)&~0xf);
     if (ReadCode>0)
         ReadTop+=ReadCode;
     ReadBorder=ReadTop-30;
@@ -792,7 +792,7 @@ void Unpack::UnpWriteBuf()
                     delete PrgStack[I];
                     PrgStack[I]=NULL;
                 }
-                UnpIO->UnpWrite(FilteredData, FilteredDataSize);
+                m_io->UnpWrite(FilteredData, FilteredDataSize);
                 UnpSomeRead=true;
                 WrittenFileSize+=FilteredDataSize;
                 WrittenBorder=BlockEnd;
@@ -852,7 +852,7 @@ void Unpack::UnpWriteData(byte *Data, size_t Size)
     int64 LeftToWrite=DestUnpSize-WrittenFileSize;
     if ((int64)WriteSize>LeftToWrite)
         WriteSize=(size_t)LeftToWrite;
-    UnpIO->UnpWrite(Data, WriteSize);
+    m_io->UnpWrite(Data, WriteSize);
     WrittenFileSize+=Size;
 }
 
