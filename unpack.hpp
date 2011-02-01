@@ -105,7 +105,7 @@ private:
     ModelPPM m_ppm;
     int PPMEscChar;
 
-    RarVM VM;
+    RarVM m_vm;
 
     /* Filters code, one entry per filter */
     Array<UnpackFilter*> Filters;

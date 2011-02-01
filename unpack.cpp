@@ -511,7 +511,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     BitInput Inp;
     Inp.InitBitInput();
     memcpy(Inp.InBuf, Code, Min(BitInput::MAX_SIZE, CodeSize));
-    VM.Init();
+    m_vm.Init();
 
     uint FiltPos;
     if (FirstByte & 0x80)
@@ -611,7 +611,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
             VMCode[I]=Inp.fgetbits()>>8;
             Inp.faddbits(8);
         }
-        VM.Prepare(&VMCode[0], VMCodeSize,&Filter->Prg);
+        m_vm.Prepare(&VMCode[0], VMCodeSize,&Filter->Prg);
     }
     StackFilter->Prg.AltCmd=&Filter->Prg.Cmd[0];
     StackFilter->Prg.CmdCount=Filter->Prg.CmdCount;
@@ -631,10 +631,10 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     }
     byte *GlobalData=&StackFilter->Prg.GlobalData[0];
     for (int I=0;I<7;I++)
-        VM.SetLowEndianValue((uint *)&GlobalData[I*4], StackFilter->Prg.InitR[I]);
-    VM.SetLowEndianValue((uint *)&GlobalData[0x1c], StackFilter->BlockLength);
-    VM.SetLowEndianValue((uint *)&GlobalData[0x20], 0);
-    VM.SetLowEndianValue((uint *)&GlobalData[0x2c], StackFilter->ExecCount);
+        m_vm.SetLowEndianValue((uint *)&GlobalData[I*4], StackFilter->Prg.InitR[I]);
+    m_vm.SetLowEndianValue((uint *)&GlobalData[0x1c], StackFilter->BlockLength);
+    m_vm.SetLowEndianValue((uint *)&GlobalData[0x20], 0);
+    m_vm.SetLowEndianValue((uint *)&GlobalData[0x2c], StackFilter->ExecCount);
     memset(&GlobalData[0x30], 0, 16);
 
     if (FirstByte & 8) // put data block passed as parameter if any
@@ -718,12 +718,12 @@ void Unpack::UnpWriteBuf()
             {
                 unsigned int BlockEnd=(BlockStart+BlockLength)&MAXWINMASK;
                 if (BlockStart<BlockEnd || BlockEnd==0)
-                    VM.SetMemory(0, Window+BlockStart, BlockLength);
+                    m_vm.SetMemory(0, Window+BlockStart, BlockLength);
                 else
                 {
                     unsigned int FirstPartLength=MAXWINSIZE-BlockStart;
-                    VM.SetMemory(0, Window+BlockStart, FirstPartLength);
-                    VM.SetMemory(FirstPartLength, Window, BlockEnd);
+                    m_vm.SetMemory(0, Window+BlockStart, FirstPartLength);
+                    m_vm.SetMemory(FirstPartLength, Window, BlockEnd);
                 }
 
                 VM_PreparedProgram *ParentPrg=&Filters[flt->ParentFilter]->Prg;
@@ -762,7 +762,7 @@ void Unpack::UnpWriteBuf()
 
                     // Apply several filters to same data block.
 
-                    VM.SetMemory(0, FilteredData, FilteredDataSize);
+                    m_vm.SetMemory(0, FilteredData, FilteredDataSize);
 
                     VM_PreparedProgram *ParentPrg=&Filters[NextFilter->ParentFilter]->Prg;
                     VM_PreparedProgram *NextPrg=&NextFilter->Prg;
@@ -822,9 +822,9 @@ void Unpack::ExecuteCode(VM_PreparedProgram *Prg)
     if (Prg->GlobalData.Size()>0)
     {
         Prg->InitR[6]=(uint)WrittenFileSize;
-        VM.SetLowEndianValue((uint *)&Prg->GlobalData[0x24],(uint)WrittenFileSize);
-        VM.SetLowEndianValue((uint *)&Prg->GlobalData[0x28],(uint)(WrittenFileSize>>32));
-        VM.Execute(Prg);
+        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x24],(uint)WrittenFileSize);
+        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x28],(uint)(WrittenFileSize>>32));
+        m_vm.Execute(Prg);
     }
 }
 
