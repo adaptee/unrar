@@ -59,17 +59,6 @@ struct UnpackFilter
 };
 
 
-struct AudioVariables // For RAR 2.0 archives only.
-{
-    int K1, K2, K3, K4, K5;
-    int D1, D2, D3, D4;
-    int LastDelta;
-    unsigned int Dif[11];
-    unsigned int ByteCount;
-    int LastChar;
-};
-
-
 class Unpack:private BitInput
 {
 
