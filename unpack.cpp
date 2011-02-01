@@ -534,7 +534,9 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
             FiltPos--;
     }
     else
+    {
         FiltPos=LastFilter; // use the same filter as last time
+    }
 
     if (FiltPos>Filters.Size() || FiltPos>OldFilterLengths.Size())
         return(false);
@@ -542,12 +544,12 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     bool NewFilter=(FiltPos == Filters.Size());
 
     UnpackFilter *StackFilter=new UnpackFilter; // new filter for PrgStack
-
     UnpackFilter *Filter;
+
     if (NewFilter) // new filter code, never used before since VM reset
     {
         // Too many different filters, corrupt archive.
-        if (FiltPos>1024)
+        if (FiltPos > 1024)
             return(false);
 
         Filters.Add(1);
