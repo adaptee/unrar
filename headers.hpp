@@ -1,6 +1,12 @@
 #ifndef _RAR_HEADERS_
 #define _RAR_HEADERS_
 
+#include "rartypes.hpp"
+#include "raros.hpp"
+#include "os.hpp"
+#include "array.hpp"
+#include "timefn.hpp"
+
 #define  SIZEOF_MARKHEAD         7
 #define  SIZEOF_OLDMHD           7
 #define  SIZEOF_NEWMHD          13
@@ -82,17 +88,17 @@
 #define  EARC_VOLNUMBER     0x0008U // store a number of current volume
 
 enum HEADER_TYPE {
-  MARK_HEAD=0x72,MAIN_HEAD=0x73,FILE_HEAD=0x74,COMM_HEAD=0x75,AV_HEAD=0x76,
-  SUB_HEAD=0x77,PROTECT_HEAD=0x78,SIGN_HEAD=0x79,NEWSUB_HEAD=0x7a,
+  MARK_HEAD=0x72, MAIN_HEAD=0x73, FILE_HEAD=0x74, COMM_HEAD=0x75, AV_HEAD=0x76,
+  SUB_HEAD=0x77, PROTECT_HEAD=0x78, SIGN_HEAD=0x79, NEWSUB_HEAD=0x7a,
   ENDARC_HEAD=0x7b
 };
 
-enum { EA_HEAD=0x100,UO_HEAD=0x101,MAC_HEAD=0x102,BEEA_HEAD=0x103,
-       NTACL_HEAD=0x104,STREAM_HEAD=0x105 };
+enum { EA_HEAD=0x100, UO_HEAD=0x101, MAC_HEAD=0x102, BEEA_HEAD=0x103,
+       NTACL_HEAD=0x104, STREAM_HEAD=0x105 };
 
 enum HOST_SYSTEM {
-  HOST_MSDOS=0,HOST_OS2=1,HOST_WIN32=2,HOST_UNIX=3,HOST_MACOS=4,
-  HOST_BEOS=5,HOST_MAX
+  HOST_MSDOS=0, HOST_OS2=1, HOST_WIN32=2, HOST_UNIX=3, HOST_MACOS=4,
+  HOST_BEOS=5, HOST_MAX
 };
 
 #define SUBHEAD_TYPE_CMT      "CMT"
@@ -214,13 +220,13 @@ struct FileHeader:BlockHeader
 
   bool CmpName(const char *Name)
   {
-    return(strcmp(FileName,Name)==0);
+    return(strcmp(FileName, Name)==0);
   }
 
   FileHeader& operator = (FileHeader &hd)
   {
     SubData.Reset();
-    memcpy(this,&hd,sizeof(*this));
+    memcpy(this,&hd, sizeof(*this));
     SubData.CleanData();
     SubData=hd.SubData;
     return(*this);
