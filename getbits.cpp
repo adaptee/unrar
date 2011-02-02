@@ -1,4 +1,4 @@
-#include "rar.hpp"
+#include "getbits.hpp"
 
 BitInput::BitInput()
 {
