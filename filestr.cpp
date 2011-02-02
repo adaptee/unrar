@@ -1,6 +1,15 @@
-#include "rar.hpp"
+#include "filestr.hpp"
 
-static bool IsUnicode(byte *Data,int Size);
+#include "strlist.hpp"
+#include "file.hpp"
+#include "pathfn.hpp"
+#include "unicode.hpp"
+#include "errhnd.hpp"
+
+//FIXME; duplicated info;
+extern ErrorHandler ErrHandler;
+
+static bool IsUnicode(byte *Data, int Size);
 
 bool ReadTextFile(
   const char *Name,
@@ -17,9 +26,9 @@ bool ReadTextFile(
   *FileName=0;
   if (Name!=NULL)
     if (Config)
-      GetConfigName(Name,FileName,true);
+      GetConfigName(Name, FileName, true);
     else
-      strcpy(FileName,Name);
+      strcpy(FileName, Name);
 
   wchar FileNameW[NM];
   *FileNameW=0;
@@ -27,15 +36,15 @@ bool ReadTextFile(
 #ifdef _WIN_ALL
   if (NameW!=NULL)
     if (Config)
-      GetConfigName(NameW,FileNameW,true);
+      GetConfigName(NameW, FileNameW, true);
     else
-      wcscpy(FileNameW,NameW);
+      wcscpy(FileNameW, NameW);
 #endif
 
   File SrcFile;
   if (FileName!=NULL && *FileName!=0 || FileNameW!=NULL && *FileNameW!=0)
   {
-    bool OpenCode=AbortOnError ? SrcFile.WOpen(FileName,FileNameW):SrcFile.Open(FileName,FileNameW);
+    bool OpenCode=AbortOnError ? SrcFile.WOpen(FileName, FileNameW):SrcFile.Open(FileName, FileNameW);
 
     if (!OpenCode)
     {
@@ -47,19 +56,19 @@ bool ReadTextFile(
   else
     SrcFile.SetHandleType(FILE_HANDLESTD);
 
-  unsigned int DataSize=0,ReadSize;
+  unsigned int DataSize=0, ReadSize;
   const int ReadBlock=1024;
   Array<char> Data(ReadBlock+5);
-  while ((ReadSize=SrcFile.Read(&Data[DataSize],ReadBlock))!=0)
+  while ((ReadSize=SrcFile.Read(&Data[DataSize], ReadBlock))!=0)
   {
     DataSize+=ReadSize;
     Data.Add(ReadSize);
   }
 
-  memset(&Data[DataSize],0,5);
+  memset(&Data[DataSize], 0, 5);
 
   if (SrcCharset==RCH_UNICODE ||
-      SrcCharset==RCH_DEFAULT && IsUnicode((byte *)&Data[0],DataSize))
+      SrcCharset==RCH_DEFAULT && IsUnicode((byte *)&Data[0], DataSize))
   {
     // Unicode in native system format, can be more than 2 bytes per character.
     Array<wchar> DataW(Data.Size()/2+1);
@@ -106,7 +115,7 @@ bool ReadTextFile(
           CurStr[Length-1]=0;
           CurStr++;
         }
-        WideToChar(CurStr,&AnsiName[0],AnsiName.Size());
+        WideToChar(CurStr,&AnsiName[0], AnsiName.Size());
 
         bool Expanded=false;
 #if defined(_WIN_ALL) && !defined(_WIN_CE)
@@ -117,18 +126,18 @@ bool ReadTextFile(
           char ExpName[NM];
           wchar ExpNameW[NM];
           *ExpNameW=0;
-          int ret,retw=1;
-          ret=ExpandEnvironmentStringsA(&AnsiName[0],ExpName,ASIZE(ExpName));
+          int ret, retw=1;
+          ret=ExpandEnvironmentStringsA(&AnsiName[0], ExpName, ASIZE(ExpName));
           if (ret!=0 && WinNT())
-            retw=ExpandEnvironmentStringsW(CurStr,ExpNameW,ASIZE(ExpNameW));
+            retw=ExpandEnvironmentStringsW(CurStr, ExpNameW, ASIZE(ExpNameW));
           Expanded=ret!=0 && ret<ASIZE(ExpName) &&
                    retw!=0 && retw<ASIZE(ExpNameW);
           if (Expanded)
-            List->AddString(ExpName,ExpNameW);
+            List->AddString(ExpName, ExpNameW);
         }
 #endif
         if (!Expanded)
-          List->AddString(&AnsiName[0],CurStr);
+          List->AddString(&AnsiName[0], CurStr);
       }
       CurStr=NextStr+1;
       while (*CurStr=='\r' || *CurStr=='\n')
@@ -170,7 +179,7 @@ bool ReadTextFile(
         }
 #if defined(_WIN_ALL)
         if (SrcCharset==RCH_OEM)
-          OemToCharA(CurStr,CurStr);
+          OemToCharA(CurStr, CurStr);
 #endif
 
         bool Expanded=false;
@@ -179,7 +188,7 @@ bool ReadTextFile(
         {
           // Expanding environment variables in Windows version.
           char ExpName[NM];
-          int ret=ExpandEnvironmentStringsA(CurStr,ExpName,ASIZE(ExpName));
+          int ret=ExpandEnvironmentStringsA(CurStr, ExpName, ASIZE(ExpName));
           Expanded=ret!=0 && ret<ASIZE(ExpName);
           if (Expanded)
             List->AddString(ExpName);
@@ -197,7 +206,7 @@ bool ReadTextFile(
 }
 
 
-bool IsUnicode(byte *Data,int Size)
+bool IsUnicode(byte *Data, int Size)
 {
   if (Size<4 || Data[0]!=0xff || Data[1]!=0xfe)
     return(false);

@@ -1,6 +1,12 @@
 #ifndef _RAR_FILESTR_
 #define _RAR_FILESTR_
 
+#include "rartypes.hpp"
+#include "options.hpp"
+
+class StringList;
+
+
 bool ReadTextFile(
   const char *Name,
   const wchar *NameW,
