@@ -1,9 +1,19 @@
 #ifndef _RAR_ARCHIVE_
 #define _RAR_ARCHIVE_
 
+#include <string.h>
+#include "rartypes.hpp"
+#include "array.hpp"
+#include "timefn.hpp"
+#include "headers.hpp"
+#include "file.hpp"
+#include "crypt.hpp"
+#include "options.hpp"
+#include "rdwrfn.hpp"
+
 class Pack;
 
-enum {EN_LOCK=1,EN_VOL=2,EN_FIRSTVOL=4};
+enum {EN_LOCK=1, EN_VOL=2, EN_FIRSTVOL=4};
 
 class Archive:public File
 {
@@ -24,7 +34,7 @@ class Archive:public File
     ComprDataIO SubDataIO;
     byte SubDataSalt[SALT_SIZE];
 #endif
-    RAROptions *Cmd,DummyCmd;
+    RAROptions *Cmd, DummyCmd;
 
     MarkHeader MarkHead;
     OldMainHeader OldMhd;
@@ -43,24 +53,24 @@ class Archive:public File
     size_t SearchBlock(int BlockType);
     size_t SearchSubBlock(const char *Type);
     int ReadBlock(int BlockType);
-    void WriteBlock(int BlockType,BaseBlock *wb=NULL);
-    int PrepareNamesToWrite(char *Name,wchar *NameW,char *DestName,byte *DestNameW);
+    void WriteBlock(int BlockType, BaseBlock *wb=NULL);
+    int PrepareNamesToWrite(char *Name, wchar *NameW, char *DestName, byte *DestNameW);
     void SetLhdSize();
     size_t ReadHeader();
     void CheckArc(bool EnableBroken);
-    void CheckOpen(const char *Name,const wchar *NameW=NULL);
-    bool WCheckOpen(const char *Name,const wchar *NameW=NULL);
+    void CheckOpen(const char *Name, const wchar *NameW=NULL);
+    bool WCheckOpen(const char *Name, const wchar *NameW=NULL);
     bool TestLock(int Mode);
     void MakeTemp();
-    void CopyMainHeader(Archive &Src,bool CopySFX=true,char *NameToDisplay=NULL);
-    bool ProcessToFileHead(Archive &Src,bool LastBlockAdded,
-      Pack *Pack=NULL,const char *SkipName=NULL);
+    void CopyMainHeader(Archive &Src, bool CopySFX=true, char *NameToDisplay=NULL);
+    bool ProcessToFileHead(Archive &Src, bool LastBlockAdded,
+      Pack *Pack=NULL, const char *SkipName=NULL);
     void TmpToArc(Archive &Src);
-    void CloseNew(int AdjustRecovery,bool CloseVolume);
+    void CloseNew(int AdjustRecovery, bool CloseVolume);
     void WriteEndBlock(bool CloseVolume);
     void CopyFileRecord(Archive &Src);
     void CopyArchiveData(Archive &Src);
-    bool GetComment(Array<byte> *CmtData,Array<wchar> *CmtDataW);
+    bool GetComment(Array<byte> *CmtData, Array<wchar> *CmtDataW);
     void ViewComment();
     void ViewFileComment();
     void SetLatestTime(RarTime *NewTime);
@@ -71,11 +81,11 @@ class Archive:public File
     void ConvertAttributes();
     int GetRecoverySize(bool Required);
     void VolSubtractHeaderSize(size_t SubSize);
-    void AddSubData(byte *SrcData,size_t DataSize,File *SrcFile,const char *Name,bool AllowSplit);
-    bool ReadSubData(Array<byte> *UnpData,File *DestFile);
+    void AddSubData(byte *SrcData, size_t DataSize, File *SrcFile, const char *Name, bool AllowSplit);
+    bool ReadSubData(Array<byte> *UnpData, File *DestFile);
     int GetHeaderType() {return(CurHeaderType);};
-    size_t ReadCommentData(Array<byte> *CmtData,Array<wchar> *CmtDataW);
-    void WriteCommentData(byte *Data,size_t DataSize,bool FileComment);
+    size_t ReadCommentData(Array<byte> *CmtData, Array<wchar> *CmtDataW);
+    void WriteCommentData(byte *Data, size_t DataSize, bool FileComment);
     RAROptions* GetRAROptions() {return(Cmd);}
     void SetSilentOpen(bool Mode) {SilentOpen=Mode;}
 
