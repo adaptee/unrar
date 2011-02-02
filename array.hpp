@@ -1,6 +1,8 @@
 #ifndef _RAR_ARRAY_
 #define _RAR_ARRAY_
 
+#include "rardefs.hpp"
+
 extern ErrorHandler ErrHandler;
 
 template <class T> class Array
@@ -73,9 +75,9 @@ template <class T> void Array<T>::Add(size_t Items)
   if (BufSize>AllocSize)
   {
     size_t Suggested=AllocSize+AllocSize/4+32;
-    size_t NewSize=Max(BufSize,Suggested);
+    size_t NewSize=Max(BufSize, Suggested);
 
-    Buffer=(T *)realloc(Buffer,NewSize*sizeof(T));
+    Buffer=(T *)realloc(Buffer, NewSize*sizeof(T));
     if (Buffer==NULL)
       ErrHandler.MemoryError();
     AllocSize=NewSize;
@@ -109,7 +111,7 @@ template <class T> void Array<T>::operator =(Array<T> &Src)
   Reset();
   Alloc(Src.BufSize);
   if (Src.BufSize!=0)
-    memcpy((void *)Buffer,(void *)Src.Buffer,Src.BufSize*sizeof(T));
+    memcpy((void *)Buffer,(void *)Src.Buffer, Src.BufSize*sizeof(T));
 }
 
 

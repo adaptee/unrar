@@ -1,6 +1,15 @@
 #ifndef _RAR_FILE_
 #define _RAR_FILE_
 
+#include <stdio.h>
+
+#include "raros.hpp"
+#include "os.hpp"
+#include "rartypes.hpp"
+
+#include "timefn.hpp"
+
+
 #ifdef _WIN_ALL
 typedef HANDLE FileHandle;
 #define BAD_HANDLE INVALID_HANDLE_VALUE
@@ -11,9 +20,9 @@ typedef FILE* FileHandle;
 
 class RAROptions;
 
-enum FILE_HANDLETYPE {FILE_HANDLENORMAL,FILE_HANDLESTD,FILE_HANDLEERR};
+enum FILE_HANDLETYPE {FILE_HANDLENORMAL, FILE_HANDLESTD, FILE_HANDLEERR};
 
-enum FILE_ERRORTYPE {FILE_SUCCESS,FILE_NOTFOUND,FILE_READERROR};
+enum FILE_ERRORTYPE {FILE_SUCCESS, FILE_NOTFOUND, FILE_READERROR};
 
 struct FileStat
 {
@@ -53,29 +62,29 @@ class File
     File();
     virtual ~File();
     void operator = (File &SrcFile);
-    bool Open(const char *Name,const wchar *NameW=NULL,bool OpenShared=false,bool Update=false);
-    void TOpen(const char *Name,const wchar *NameW=NULL);
-    bool WOpen(const char *Name,const wchar *NameW=NULL);
-    bool Create(const char *Name,const wchar *NameW=NULL,bool ShareRead=true);
-    void TCreate(const char *Name,const wchar *NameW=NULL,bool ShareRead=true);
-    bool WCreate(const char *Name,const wchar *NameW=NULL,bool ShareRead=true);
+    bool Open(const char *Name, const wchar *NameW=NULL, bool OpenShared=false, bool Update=false);
+    void TOpen(const char *Name, const wchar *NameW=NULL);
+    bool WOpen(const char *Name, const wchar *NameW=NULL);
+    bool Create(const char *Name, const wchar *NameW=NULL, bool ShareRead=true);
+    void TCreate(const char *Name, const wchar *NameW=NULL, bool ShareRead=true);
+    bool WCreate(const char *Name, const wchar *NameW=NULL, bool ShareRead=true);
     bool Close();
     void Flush();
     bool Delete();
-    bool Rename(const char *NewName,const wchar *NewNameW=NULL);
-    void Write(const void *Data,size_t Size);
-    int Read(void *Data,size_t Size);
-    int DirectRead(void *Data,size_t Size);
-    void Seek(int64 Offset,int Method);
-    bool RawSeek(int64 Offset,int Method);
+    bool Rename(const char *NewName, const wchar *NewNameW=NULL);
+    void Write(const void *Data, size_t Size);
+    int Read(void *Data, size_t Size);
+    int DirectRead(void *Data, size_t Size);
+    void Seek(int64 Offset, int Method);
+    bool RawSeek(int64 Offset, int Method);
     int64 Tell();
     void Prealloc(int64 Size);
     byte GetByte();
     void PutByte(byte Byte);
     bool Truncate();
-    void SetOpenFileTime(RarTime *ftm,RarTime *ftc=NULL,RarTime *fta=NULL);
-    void SetCloseFileTime(RarTime *ftm,RarTime *fta=NULL);
-    static void SetCloseFileTimeByName(const char *Name,RarTime *ftm,RarTime *fta);
+    void SetOpenFileTime(RarTime *ftm, RarTime *ftc=NULL, RarTime *fta=NULL);
+    void SetCloseFileTime(RarTime *ftm, RarTime *fta=NULL);
+    static void SetCloseFileTimeByName(const char *Name, RarTime *ftm, RarTime *fta);
     void GetOpenFileTime(RarTime *ft);
     bool IsOpened() {return(hFile!=BAD_HANDLE);};
     int64 FileLength();
@@ -87,7 +96,7 @@ class File
     FileHandle GetHandle() {return(hFile);};
     void SetIgnoreReadErrors(bool Mode) {IgnoreReadErrors=Mode;};
     char *GetName() {return(FileName);}
-    int64 Copy(File &Dest,int64 Length=INT64NDF);
+    int64 Copy(File &Dest, int64 Length=INT64NDF);
     void SetAllowDelete(bool Allow) {AllowDelete=Allow;}
     void SetExceptions(bool Allow) {AllowExceptions=Allow;}
 #ifdef _WIN_ALL
