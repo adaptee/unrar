@@ -1,14 +1,20 @@
 #ifndef _RAR_DATAIO_
 #define _RAR_DATAIO_
 
+#include <string.h>
+#include "rartypes.hpp"
+#include "crypt.hpp"
+
 class CmdAdd;
 class Unpack;
+class File;
+class FileHeader;
 
 
 class ComprDataIO
 {
   private:
-    void ShowUnpRead(int64 ArcPos,int64 ArcSize);
+    void ShowUnpRead(int64 ArcPos, int64 ArcSize);
     void ShowUnpWrite();
 
 
@@ -50,20 +56,20 @@ class ComprDataIO
   public:
     ComprDataIO();
     void Init();
-    int UnpRead(byte *Addr,size_t Count);
-    void UnpWrite(byte *Addr,size_t Count);
+    int UnpRead(byte *Addr, size_t Count);
+    void UnpWrite(byte *Addr, size_t Count);
     void EnableShowProgress(bool Show) {ShowProgress=Show;}
-    void GetUnpackedData(byte **Data,size_t *Size);
+    void GetUnpackedData(byte **Data, size_t *Size);
     void SetPackedSizeToRead(int64 Size) {UnpPackedSize=Size;}
     void SetTestMode(bool Mode) {TestMode=Mode;}
     void SetSkipUnpCRC(bool Skip) {SkipUnpCRC=Skip;}
-    void SetFiles(File *SrcFile,File *DestFile);
+    void SetFiles(File *SrcFile, File *DestFile);
     void SetCommand(CmdAdd *Cmd) {Command=Cmd;}
-    void SetSubHeader(FileHeader *hd,int64 *Pos) {SubHead=hd;SubHeadPos=Pos;}
-    void SetEncryption(int Method,const wchar *Password,const byte *Salt,bool Encrypt,bool HandsOffHash);
+    void SetSubHeader(FileHeader *hd, int64 *Pos) {SubHead=hd;SubHeadPos=Pos;}
+    void SetEncryption(int Method, const wchar *Password, const byte *Salt, bool Encrypt, bool HandsOffHash);
     void SetAV15Encryption();
     void SetCmt13Encryption();
-    void SetUnpackToMemory(byte *Addr,uint Size);
+    void SetUnpackToMemory(byte *Addr, uint Size);
     void SetCurrentCommand(char Cmd) {CurrentCommand=Cmd;}
 
     bool PackVolume;
@@ -71,7 +77,7 @@ class ComprDataIO
     bool NextVolumeMissing;
     int64 TotalPackRead;
     int64 UnpArcSize;
-    int64 CurPackRead,CurPackWrite,CurUnpRead,CurUnpWrite;
+    int64 CurPackRead, CurPackWrite, CurUnpRead, CurUnpWrite;
 
     // Size of already processed archives.
     // Used to calculate the total operation progress.
@@ -79,7 +85,7 @@ class ComprDataIO
 
     int64 TotalArcSize;
 
-    uint PackFileCRC,UnpFileCRC,PackedCRC;
+    uint PackFileCRC, UnpFileCRC, PackedCRC;
 
     int Encryption;
     int Decryption;

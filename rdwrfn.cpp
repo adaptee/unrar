@@ -1,4 +1,12 @@
-#include "rar.hpp"
+#include "rdwrfn.hpp"
+
+#include "archive.hpp"
+#include "volume.hpp"
+#include "smallfn.hpp"
+#include "system.hpp"
+#include "consio.hpp"
+#include "crc.hpp"
+
 
 ComprDataIO::ComprDataIO()
 {
@@ -36,9 +44,9 @@ void ComprDataIO::Init()
 
 
 
-int ComprDataIO::UnpRead(byte *Addr,size_t Count)
+int ComprDataIO::UnpRead(byte *Addr, size_t Count)
 {
-  int RetCode=0,TotalRead=0;
+  int RetCode=0, TotalRead=0;
   byte *ReadAddr;
   ReadAddr=Addr;
   while (Count > 0)
@@ -48,7 +56,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     size_t ReadSize=((int64)Count>UnpPackedSize) ? (size_t)UnpPackedSize:Count;
     if (UnpackFromMemory)
     {
-      memcpy(Addr,UnpackFromMemoryAddr,UnpackFromMemorySize);
+      memcpy(Addr, UnpackFromMemoryAddr, UnpackFromMemorySize);
       RetCode=(int)UnpackFromMemorySize;
       UnpackFromMemorySize=0;
     }
@@ -56,10 +64,10 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     {
       if (!SrcFile->IsOpened())
         return(-1);
-      RetCode=SrcFile->Read(ReadAddr,ReadSize);
+      RetCode=SrcFile->Read(ReadAddr, ReadSize);
       FileHeader *hd=SubHead!=NULL ? SubHead:&SrcArc->NewLhd;
       if (hd->Flags & LHD_SPLIT_AFTER)
-        PackedCRC=CRC(PackedCRC,ReadAddr,RetCode);
+        PackedCRC=CRC(PackedCRC, ReadAddr, RetCode);
     }
     CurUnpRead+=RetCode;
     TotalRead+=RetCode;
@@ -73,7 +81,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     if (UnpPackedSize == 0 && UnpVolume)
     {
 #ifndef NOVOLUME
-      if (!MergeArchive(*SrcArc,this,true,CurrentCommand))
+      if (!MergeArchive(*SrcArc, this, true, CurrentCommand))
 #endif
       {
         NextVolumeMissing=true;
@@ -85,7 +93,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
   }
   Archive *SrcArc=(Archive *)SrcFile;
   if (SrcArc!=NULL)
-    ShowUnpRead(SrcArc->CurBlockPos+CurUnpRead,UnpArcSize);
+    ShowUnpRead(SrcArc->CurBlockPos+CurUnpRead, UnpArcSize);
   if (RetCode!=-1)
   {
     RetCode=TotalRead;
@@ -93,7 +101,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
     if (Decryption)
 #ifndef SFX_MODULE
       if (Decryption<20)
-        Decrypt.Crypt(Addr,RetCode,(Decryption==15) ? NEW_CRYPT : OLD_DECODE);
+        Decrypt.Crypt(Addr, RetCode,(Decryption==15) ? NEW_CRYPT : OLD_DECODE);
       else
         if (Decryption==20)
           for (int I=0;I<RetCode;I+=16)
@@ -102,7 +110,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
 #endif
         {
           int CryptSize=(RetCode & 0xf)==0 ? RetCode:((RetCode & ~0xf)+16);
-          Decrypt.DecryptBlock(Addr,CryptSize);
+          Decrypt.DecryptBlock(Addr, CryptSize);
         }
 #endif
   }
@@ -118,7 +126,7 @@ int ComprDataIO::UnpRead(byte *Addr,size_t Count)
 #pragma runtime_checks( "s", off )
 #endif
 
-void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
+void ComprDataIO::UnpWrite(byte *Addr, size_t Count)
 {
 
 #ifdef RARDLL
@@ -126,7 +134,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
   if (Cmd->DllOpMode!=RAR_SKIP)
   {
     if (Cmd->Callback!=NULL &&
-        Cmd->Callback(UCM_PROCESSDATA,Cmd->UserData,(LPARAM)Addr,Count)==-1)
+        Cmd->Callback(UCM_PROCESSDATA, Cmd->UserData,(LPARAM)Addr, Count)==-1)
       ErrHandler.Exit(USER_BREAK);
     if (Cmd->ProcessDataProc!=NULL)
     {
@@ -136,7 +144,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
       // that it will be PASCAL type (for compatibility with Visual Basic).
 #if defined(_MSC_VER)
 #ifndef _WIN_64
-      __asm mov ebx,esp
+      __asm mov ebx, esp
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _EBX=_ESP;
@@ -147,7 +155,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
       // convention broken it.
 #if defined(_MSC_VER)
 #ifndef _WIN_64
-      __asm mov esp,ebx
+      __asm mov esp, ebx
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _ESP=_EBX;
@@ -164,22 +172,22 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
   {
     if (Count <= UnpackToMemorySize)
     {
-      memcpy(UnpackToMemoryAddr,Addr,Count);
+      memcpy(UnpackToMemoryAddr, Addr, Count);
       UnpackToMemoryAddr+=Count;
       UnpackToMemorySize-=Count;
     }
   }
   else
     if (!TestMode)
-      DestFile->Write(Addr,Count);
+      DestFile->Write(Addr, Count);
   CurUnpWrite+=Count;
   if (!SkipUnpCRC)
 #ifndef SFX_MODULE
     if (((Archive *)SrcFile)->OldFormat)
-      UnpFileCRC=OldCRC((ushort)UnpFileCRC,Addr,Count);
+      UnpFileCRC=OldCRC((ushort)UnpFileCRC, Addr, Count);
     else
 #endif
-      UnpFileCRC=CRC(UnpFileCRC,Addr,Count);
+      UnpFileCRC=CRC(UnpFileCRC, Addr, Count);
   ShowUnpWrite();
   Wait();
 }
@@ -194,7 +202,7 @@ void ComprDataIO::UnpWrite(byte *Addr,size_t Count)
 
 
 
-void ComprDataIO::ShowUnpRead(int64 ArcPos,int64 ArcSize)
+void ComprDataIO::ShowUnpRead(int64 ArcPos, int64 ArcSize)
 {
   if (ShowProgress && SrcFile!=NULL)
   {
@@ -208,10 +216,10 @@ void ComprDataIO::ShowUnpRead(int64 ArcPos,int64 ArcSize)
     Archive *SrcArc=(Archive *)SrcFile;
     RAROptions *Cmd=SrcArc->GetRAROptions();
 
-    int CurPercent=ToPercent(ArcPos,ArcSize);
+    int CurPercent=ToPercent(ArcPos, ArcSize);
     if (!Cmd->DisablePercentage && CurPercent!=LastPercent)
     {
-      mprintf("\b\b\b\b%3d%%",CurPercent);
+      mprintf("\b\b\b\b%3d%%", CurPercent);
       LastPercent=CurPercent;
     }
   }
@@ -229,7 +237,7 @@ void ComprDataIO::ShowUnpWrite()
 
 
 
-void ComprDataIO::SetFiles(File *SrcFile,File *DestFile)
+void ComprDataIO::SetFiles(File *SrcFile, File *DestFile)
 {
   if (SrcFile!=NULL)
     ComprDataIO::SrcFile=SrcFile;
@@ -239,27 +247,27 @@ void ComprDataIO::SetFiles(File *SrcFile,File *DestFile)
 }
 
 
-void ComprDataIO::GetUnpackedData(byte **Data,size_t *Size)
+void ComprDataIO::GetUnpackedData(byte **Data, size_t *Size)
 {
   *Data=UnpWrAddr;
   *Size=UnpWrSize;
 }
 
 
-void ComprDataIO::SetEncryption(int Method,const wchar *Password,const byte *Salt,bool Encrypt,bool HandsOffHash)
+void ComprDataIO::SetEncryption(int Method, const wchar *Password, const byte *Salt, bool Encrypt, bool HandsOffHash)
 {
   if (Encrypt)
   {
     Encryption=*Password ? Method:0;
 #ifndef NOCRYPT
-    Crypt.SetCryptKeys(Password,Salt,Encrypt,false,HandsOffHash);
+    Crypt.SetCryptKeys(Password, Salt, Encrypt, false, HandsOffHash);
 #endif
   }
   else
   {
     Decryption=*Password ? Method:0;
 #ifndef NOCRYPT
-    Decrypt.SetCryptKeys(Password,Salt,Encrypt,Method<29,HandsOffHash);
+    Decrypt.SetCryptKeys(Password, Salt, Encrypt, Method<29, HandsOffHash);
 #endif
   }
 }
@@ -285,7 +293,7 @@ void ComprDataIO::SetCmt13Encryption()
 
 
 
-void ComprDataIO::SetUnpackToMemory(byte *Addr,uint Size)
+void ComprDataIO::SetUnpackToMemory(byte *Addr, uint Size)
 {
   UnpackToMemory=true;
   UnpackToMemoryAddr=Addr;
