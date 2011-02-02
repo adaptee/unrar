@@ -9,14 +9,17 @@
  * http://fp.gladman.plus.com/cryptography_technology/rijndael            *
  **************************************************************************/
 
+#include <string.h>
+#include "rartypes.hpp"
+
 #define _MAX_KEY_COLUMNS (256/32)
 #define _MAX_ROUNDS      14
 #define MAX_IV_SIZE      16
 
 class Rijndael
-{	
+{
   public:
-    enum Direction { Encrypt , Decrypt };
+    enum Direction { Encrypt, Decrypt };
   private:
     void keySched(byte key[_MAX_KEY_COLUMNS][4]);
     void keyEncToDec();
@@ -29,9 +32,9 @@ class Rijndael
     byte     m_expandedKey[_MAX_ROUNDS+1][4][4];
   public:
     Rijndael();
-    void init(Direction dir,const byte *key,byte *initVector);
+    void init(Direction dir, const byte *key, byte *initVector);
     size_t blockEncrypt(const byte *input, size_t inputLen, byte *outBuffer);
     size_t blockDecrypt(const byte *input, size_t inputLen, byte *outBuffer);
 };
-	
+
 #endif // _RIJNDAEL_H_

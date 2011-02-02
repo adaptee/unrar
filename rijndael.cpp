@@ -5,17 +5,18 @@
  * Dynamic tables generation is based on the Brian Gladman work:          *
  * http://fp.gladman.plus.com/cryptography_technology/rijndael            *
  **************************************************************************/
-#include "rar.hpp"
+//#include "rar.hpp"
+#include "rijndael.hpp"
 
 const int uKeyLenInBytes=16, m_uRounds=10;
 
-static byte S[256],S5[256],rcon[30];
-static byte T1[256][4],T2[256][4],T3[256][4],T4[256][4];
-static byte T5[256][4],T6[256][4],T7[256][4],T8[256][4];
-static byte U1[256][4],U2[256][4],U3[256][4],U4[256][4];
+static byte S[256], S5[256], rcon[30];
+static byte T1[256][4], T2[256][4], T3[256][4], T4[256][4];
+static byte T5[256][4], T6[256][4], T7[256][4], T8[256][4];
+static byte U1[256][4], U2[256][4], U3[256][4], U4[256][4];
 
 
-inline void Xor128(byte *dest,const byte *arg1,const byte *arg2)
+inline void Xor128(byte *dest, const byte *arg1, const byte *arg2)
 {
 #if defined(PRESENT_INT32) && defined(ALLOW_NOT_ALIGNED_INT)
   ((uint32*)dest)[0]=((uint32*)arg1)[0]^((uint32*)arg2)[0];
@@ -29,8 +30,8 @@ inline void Xor128(byte *dest,const byte *arg1,const byte *arg2)
 }
 
 
-inline void Xor128(byte *dest,const byte *arg1,const byte *arg2,
-                   const byte *arg3,const byte *arg4)
+inline void Xor128(byte *dest, const byte *arg1, const byte *arg2,
+                   const byte *arg3, const byte *arg4)
 {
 #if defined(PRESENT_INT32) && defined(ALLOW_NOT_ALIGNED_INT)
   (*(uint32*)dest)=(*(uint32*)arg1)^(*(uint32*)arg2)^(*(uint32*)arg3)^(*(uint32*)arg4);
@@ -41,7 +42,7 @@ inline void Xor128(byte *dest,const byte *arg1,const byte *arg2,
 }
 
 
-inline void Copy128(byte *dest,const byte *src)
+inline void Copy128(byte *dest, const byte *src)
 {
 #if defined(PRESENT_INT32) && defined(ALLOW_NOT_ALIGNED_INT)
   ((uint32*)dest)[0]=((uint32*)src)[0];
@@ -66,14 +67,14 @@ Rijndael::Rijndael()
 }
 
 
-void Rijndael::init(Direction dir,const byte * key,byte * initVector)
+void Rijndael::init(Direction dir, const byte * key, byte * initVector)
 {
   m_direction = dir;
 
   byte keyMatrix[_MAX_KEY_COLUMNS][4];
 
   for(uint i = 0;i < uKeyLenInBytes;i++)
-    keyMatrix[i >> 2][i & 3] = key[i]; 
+    keyMatrix[i >> 2][i & 3] = key[i];
 
   for(int i = 0;i < MAX_IV_SIZE;i++)
     m_initVector[i] = initVector[i];
@@ -85,33 +86,33 @@ void Rijndael::init(Direction dir,const byte * key,byte * initVector)
 }
 
 
-  
+
 size_t Rijndael::blockDecrypt(const byte *input, size_t inputLen, byte *outBuffer)
 {
   if (input == 0 || inputLen <= 0)
     return 0;
 
   byte block[16], iv[4][4];
-  memcpy(iv,m_initVector,16); 
+  memcpy(iv, m_initVector, 16);
 
   size_t numBlocks=inputLen/16;
   for (size_t i = numBlocks; i > 0; i--)
   {
     decrypt(input, block);
-    Xor128(block,block,(byte*)iv);
+    Xor128(block, block,(byte*)iv);
 #if STRICT_ALIGN
     memcpy(iv, input, 16);
     memcpy(outBuf, block, 16);
 #else
-    Copy128((byte*)iv,input);
-    Copy128(outBuffer,block);
+    Copy128((byte*)iv, input);
+    Copy128(outBuffer, block);
 #endif
     input += 16;
     outBuffer += 16;
   }
 
-  memcpy(m_initVector,iv,16);
-  
+  memcpy(m_initVector, iv, 16);
+
   return 16*numBlocks;
 }
 
@@ -123,7 +124,7 @@ size_t Rijndael::blockDecrypt(const byte *input, size_t inputLen, byte *outBuffe
 
 void Rijndael::keySched(byte key[_MAX_KEY_COLUMNS][4])
 {
-  int j,rconpointer = 0;
+  int j, rconpointer = 0;
 
   // Calculate the necessary round keys
   // The number of calculations depends on keyBits and blockBits
@@ -133,7 +134,7 @@ void Rijndael::keySched(byte key[_MAX_KEY_COLUMNS][4])
 
   // Copy the input key to the temporary key matrix
 
-  memcpy(tempKey,key,sizeof(tempKey));
+  memcpy(tempKey, key, sizeof(tempKey));
 
   int r = 0;
   int t = 0;
@@ -151,7 +152,7 @@ void Rijndael::keySched(byte key[_MAX_KEY_COLUMNS][4])
       t = 0;
     }
   }
-    
+
   while(r <= m_uRounds)
   {
     tempKey[0][0] ^= S[tempKey[uKeyColumns-1][1]];
@@ -189,7 +190,7 @@ void Rijndael::keySched(byte key[_MAX_KEY_COLUMNS][4])
         t = 0;
       }
     }
-  }   
+  }
 }
 
 void Rijndael::keyEncToDec()
@@ -203,32 +204,32 @@ void Rijndael::keyEncToDec()
         byte *w=m_expandedKey[r][j];
         n_expandedKey[j][i]=U1[w[0]][i]^U2[w[1]][i]^U3[w[2]][i]^U4[w[3]][i];
       }
-    memcpy(m_expandedKey[r],n_expandedKey,sizeof(m_expandedKey[0]));
+    memcpy(m_expandedKey[r], n_expandedKey, sizeof(m_expandedKey[0]));
   }
-} 
+}
 
 
 void Rijndael::decrypt(const byte a[16], byte b[16])
 {
   int r;
   byte temp[4][4];
-  
+
   Xor128((byte*)temp,(byte*)a,(byte*)m_expandedKey[m_uRounds]);
 
-  Xor128(b,   T5[temp[0][0]],T6[temp[3][1]],T7[temp[2][2]],T8[temp[1][3]]);
-  Xor128(b+4, T5[temp[1][0]],T6[temp[0][1]],T7[temp[3][2]],T8[temp[2][3]]);
-  Xor128(b+8, T5[temp[2][0]],T6[temp[1][1]],T7[temp[0][2]],T8[temp[3][3]]);
-  Xor128(b+12,T5[temp[3][0]],T6[temp[2][1]],T7[temp[1][2]],T8[temp[0][3]]);
+  Xor128(b, T5[temp[0][0]], T6[temp[3][1]], T7[temp[2][2]], T8[temp[1][3]]);
+  Xor128(b+4, T5[temp[1][0]], T6[temp[0][1]], T7[temp[3][2]], T8[temp[2][3]]);
+  Xor128(b+8, T5[temp[2][0]], T6[temp[1][1]], T7[temp[0][2]], T8[temp[3][3]]);
+  Xor128(b+12, T5[temp[3][0]], T6[temp[2][1]], T7[temp[1][2]], T8[temp[0][3]]);
 
   for(r = m_uRounds-1; r > 1; r--)
   {
     Xor128((byte*)temp,(byte*)b,(byte*)m_expandedKey[r]);
-    Xor128(b,   T5[temp[0][0]],T6[temp[3][1]],T7[temp[2][2]],T8[temp[1][3]]);
-    Xor128(b+4, T5[temp[1][0]],T6[temp[0][1]],T7[temp[3][2]],T8[temp[2][3]]);
-    Xor128(b+8, T5[temp[2][0]],T6[temp[1][1]],T7[temp[0][2]],T8[temp[3][3]]);
-    Xor128(b+12,T5[temp[3][0]],T6[temp[2][1]],T7[temp[1][2]],T8[temp[0][3]]);
+    Xor128(b, T5[temp[0][0]], T6[temp[3][1]], T7[temp[2][2]], T8[temp[1][3]]);
+    Xor128(b+4, T5[temp[1][0]], T6[temp[0][1]], T7[temp[3][2]], T8[temp[2][3]]);
+    Xor128(b+8, T5[temp[2][0]], T6[temp[1][1]], T7[temp[0][2]], T8[temp[3][3]]);
+    Xor128(b+12, T5[temp[3][0]], T6[temp[2][1]], T7[temp[1][2]], T8[temp[0][3]]);
   }
- 
+
   Xor128((byte*)temp,(byte*)b,(byte*)m_expandedKey[1]);
   b[ 0] = S5[temp[0][0]];
   b[ 1] = S5[temp[3][1]];
@@ -268,23 +269,23 @@ void Rijndael::decrypt(const byte a[16], byte b[16])
 
 void Rijndael::GenerateTables()
 {
-  unsigned char pow[512],log[256];
-  int i = 0, w = 1; 
+  unsigned char pow[512], log[256];
+  int i = 0, w = 1;
   do
-  {   
+  {
     pow[i] = (byte)w;
     pow[i + 255] = (byte)w;
     log[w] = (byte)i++;
     w ^=  (w << 1) ^ (w & ff_hi ? ff_poly : 0);
   } while (w != 1);
- 
-  for (int i = 0,w = 1; i < sizeof(rcon)/sizeof(rcon[0]); i++)
+
+  for (int i = 0, w = 1; i < sizeof(rcon)/sizeof(rcon[0]); i++)
   {
     rcon[i] = w;
     w = (w << 1) ^ (w & ff_hi ? ff_poly : 0);
   }
   for(int i = 0; i < 256; ++i)
-  {   
+  {
     unsigned char b=S[i]=fwd_affine(FFinv((byte)i));
     T1[i][1]=T1[i][2]=T2[i][2]=T2[i][3]=T3[i][0]=T3[i][3]=T4[i][0]=T4[i][1]=b;
     T1[i][0]=T2[i][1]=T3[i][2]=T4[i][3]=FFmul02(b);
