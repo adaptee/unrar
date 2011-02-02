@@ -1,4 +1,6 @@
-#include "rar.hpp"
+#include "savepos.hpp"
+#include "file.hpp"
+
 
 SaveFilePos::SaveFilePos(File &SaveFile)
 {
@@ -11,5 +13,5 @@ SaveFilePos::SaveFilePos(File &SaveFile)
 SaveFilePos::~SaveFilePos()
 {
   if (CloseCount==SaveFile->CloseCount)
-    SaveFile->Seek(SavePos,SEEK_SET);
+    SaveFile->Seek(SavePos, SEEK_SET);
 }
