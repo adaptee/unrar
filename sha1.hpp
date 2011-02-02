@@ -1,6 +1,9 @@
 #ifndef _RAR_SHA1_
 #define _RAR_SHA1_
 
+#include <string.h>
+#include "rartypes.hpp"
+
 #define HW 5
 
 typedef struct {
