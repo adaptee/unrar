@@ -1,14 +1,22 @@
-#include "rar.hpp"
+#include <string.h>
+#include <ctype.h>
 
-static bool match(const char *pattern,const char *string,bool ForceCase);
-static bool match(const wchar *pattern,const wchar *string,bool ForceCase);
+#include "rardefs.hpp"
+#include "match.hpp"
+#include "unicode.hpp"
+#include "pathfn.hpp"
+#include "strfn.hpp"
 
-static int mstricompc(const char *Str1,const char *Str2,bool ForceCase);
-static int mwcsicompc(const wchar *Str1,const wchar *Str2,bool ForceCase);
-static int mstrnicompc(const char *Str1,const char *Str2,size_t N,bool ForceCase);
-static int mwcsnicompc(const wchar *Str1,const wchar *Str2,size_t N,bool ForceCase);
 
-inline uint toupperc(byte ch,bool ForceCase)
+static bool match(const char *pattern, const char *string, bool ForceCase);
+static bool match(const wchar *pattern, const wchar *string, bool ForceCase);
+
+static int mstricompc(const char *Str1, const char *Str2, bool ForceCase);
+static int mwcsicompc(const wchar *Str1, const wchar *Str2, bool ForceCase);
+static int mstrnicompc(const char *Str1, const char *Str2, size_t N, bool ForceCase);
+static int mwcsnicompc(const wchar *Str1, const wchar *Str2, size_t N, bool ForceCase);
+
+inline uint toupperc(byte ch, bool ForceCase)
 {
   if (ForceCase)
     return(ch);
@@ -22,7 +30,7 @@ inline uint toupperc(byte ch,bool ForceCase)
 }
 
 
-inline uint touppercw(uint ch,bool ForceCase)
+inline uint touppercw(uint ch, bool ForceCase)
 {
   if (ForceCase)
     return(ch);
@@ -34,17 +42,17 @@ inline uint touppercw(uint ch,bool ForceCase)
 }
 
 
-bool CmpName(const char *Wildcard,const char *Name,int CmpMode)
+bool CmpName(const char *Wildcard, const char *Name, int CmpMode)
 {
   bool ForceCase=(CmpMode&MATCH_FORCECASESENSITIVE)!=0;
 
   CmpMode&=MATCH_MODEMASK;
-  
+
   if (CmpMode!=MATCH_NAMES)
   {
     size_t WildLength=strlen(Wildcard);
-    if (CmpMode!=MATCH_EXACT && CmpMode!=MATCH_EXACTPATH && 
-        mstrnicompc(Wildcard,Name,WildLength,ForceCase)==0)
+    if (CmpMode!=MATCH_EXACT && CmpMode!=MATCH_EXACTPATH &&
+        mstrnicompc(Wildcard, Name, WildLength, ForceCase)==0)
     {
       // For all modes except MATCH_NAMES, MATCH_EXACT and MATCH_EXACTPATH
       // "path1" mask must match "path1\path2\filename.ext" and "path1" names.
@@ -57,24 +65,24 @@ bool CmpName(const char *Wildcard,const char *Name,int CmpMode)
     if (CmpMode==MATCH_SUBPATHONLY)
       return(false);
 
-    char Path1[NM],Path2[NM];
-    GetFilePath(Wildcard,Path1,ASIZE(Path1));
-    GetFilePath(Name,Path2,ASIZE(Path1));
+    char Path1[NM], Path2[NM];
+    GetFilePath(Wildcard, Path1, ASIZE(Path1));
+    GetFilePath(Name, Path2, ASIZE(Path1));
 
     if ((CmpMode==MATCH_EXACT || CmpMode==MATCH_EXACTPATH) &&
-        mstricompc(Path1,Path2,ForceCase)!=0)
+        mstricompc(Path1, Path2, ForceCase)!=0)
       return(false);
     if (CmpMode==MATCH_SUBPATH || CmpMode==MATCH_WILDSUBPATH)
       if (IsWildcard(Path1))
-        return(match(Wildcard,Name,ForceCase));
+        return(match(Wildcard, Name, ForceCase));
       else
         if (CmpMode==MATCH_SUBPATH || IsWildcard(Wildcard))
         {
-          if (*Path1 && mstrnicompc(Path1,Path2,strlen(Path1),ForceCase)!=0)
+          if (*Path1 && mstrnicompc(Path1, Path2, strlen(Path1), ForceCase)!=0)
             return(false);
         }
         else
-          if (mstricompc(Path1,Path2,ForceCase)!=0)
+          if (mstricompc(Path1, Path2, ForceCase)!=0)
             return(false);
   }
   char *Name1=PointToName(Wildcard);
@@ -82,18 +90,18 @@ bool CmpName(const char *Wildcard,const char *Name,int CmpMode)
 
   // Always return false for RAR temporary files to exclude them
   // from archiving operations.
-  if (mstrnicompc("__rar_",Name2,6,false)==0)
+  if (mstrnicompc("__rar_", Name2, 6, false)==0)
     return(false);
 
   if (CmpMode==MATCH_EXACT)
-    return(mstricompc(Name1,Name2,ForceCase)==0);
-  
-  return(match(Name1,Name2,ForceCase));
+    return(mstricompc(Name1, Name2, ForceCase)==0);
+
+  return(match(Name1, Name2, ForceCase));
 }
 
 
 #ifndef SFX_MODULE
-bool CmpName(const wchar *Wildcard,const wchar *Name,int CmpMode)
+bool CmpName(const wchar *Wildcard, const wchar *Name, int CmpMode)
 {
   bool ForceCase=(CmpMode&MATCH_FORCECASESENSITIVE)!=0;
 
@@ -103,7 +111,7 @@ bool CmpName(const wchar *Wildcard,const wchar *Name,int CmpMode)
   {
     size_t WildLength=wcslen(Wildcard);
     if (CmpMode!=MATCH_EXACT && CmpMode!=MATCH_EXACTPATH &&
-        mwcsnicompc(Wildcard,Name,WildLength,ForceCase)==0)
+        mwcsnicompc(Wildcard, Name, WildLength, ForceCase)==0)
     {
       // For all modes except MATCH_NAMES, MATCH_EXACT and MATCH_EXACTPATH
       // "path1" mask must match "path1\path2\filename.ext" and "path1" names.
@@ -116,24 +124,24 @@ bool CmpName(const wchar *Wildcard,const wchar *Name,int CmpMode)
     if (CmpMode==MATCH_SUBPATHONLY)
       return(false);
 
-    wchar Path1[NM],Path2[NM];
-    GetFilePath(Wildcard,Path1,ASIZE(Path1));
-    GetFilePath(Name,Path2,ASIZE(Path2));
+    wchar Path1[NM], Path2[NM];
+    GetFilePath(Wildcard, Path1, ASIZE(Path1));
+    GetFilePath(Name, Path2, ASIZE(Path2));
 
     if ((CmpMode==MATCH_EXACT || CmpMode==MATCH_EXACTPATH) &&
-        mwcsicompc(Path1,Path2,ForceCase)!=0)
+        mwcsicompc(Path1, Path2, ForceCase)!=0)
       return(false);
     if (CmpMode==MATCH_SUBPATH || CmpMode==MATCH_WILDSUBPATH)
-      if (IsWildcard(NULL,Path1))
-        return(match(Wildcard,Name,ForceCase));
+      if (IsWildcard(NULL, Path1))
+        return(match(Wildcard, Name, ForceCase));
       else
-        if (CmpMode==MATCH_SUBPATH || IsWildcard(NULL,Wildcard))
+        if (CmpMode==MATCH_SUBPATH || IsWildcard(NULL, Wildcard))
         {
-          if (*Path1 && mwcsnicompc(Path1,Path2,wcslen(Path1),ForceCase)!=0)
+          if (*Path1 && mwcsnicompc(Path1, Path2, wcslen(Path1), ForceCase)!=0)
             return(false);
         }
         else
-          if (mwcsicompc(Path1,Path2,ForceCase)!=0)
+          if (mwcsicompc(Path1, Path2, ForceCase)!=0)
             return(false);
   }
   wchar *Name1=PointToName(Wildcard);
@@ -141,23 +149,23 @@ bool CmpName(const wchar *Wildcard,const wchar *Name,int CmpMode)
 
   // Always return false for RAR temporary files to exclude them
   // from archiving operations.
-  if (mwcsnicompc(L"__rar_",Name2,6,false)==0)
+  if (mwcsnicompc(L"__rar_", Name2, 6, false)==0)
     return(false);
 
   if (CmpMode==MATCH_EXACT)
-    return(mwcsicompc(Name1,Name2,ForceCase)==0);
+    return(mwcsicompc(Name1, Name2, ForceCase)==0);
 
-  return(match(Name1,Name2,ForceCase));
+  return(match(Name1, Name2, ForceCase));
 }
 #endif
 
 
-bool match(const char *pattern,const char *string,bool ForceCase)
+bool match(const char *pattern, const char *string, bool ForceCase)
 {
   for (;; ++string)
   {
-    char stringc=toupperc(*string,ForceCase);
-    char patternc=toupperc(*pattern++,ForceCase);
+    char stringc=toupperc(*string, ForceCase);
+    char patternc=toupperc(*pattern++, ForceCase);
     switch (patternc)
     {
       case 0:
@@ -180,12 +188,12 @@ bool match(const char *pattern,const char *string,bool ForceCase)
           {
             string=dot;
             if (strpbrk(pattern,"*?")==NULL && strchr(string+1,'.')==NULL)
-              return(mstricompc(pattern+1,string+1,ForceCase)==0);
+              return(mstricompc(pattern+1, string+1, ForceCase)==0);
           }
         }
 
         while (*string)
-          if (match(pattern,string++,ForceCase))
+          if (match(pattern, string++, ForceCase))
             return(true);
         return(false);
       default:
@@ -193,7 +201,7 @@ bool match(const char *pattern,const char *string,bool ForceCase)
         {
           // Allow "name." mask match "name" and "name.\" match "name\".
           if (patternc=='.' && (stringc==0 || stringc=='\\' || stringc=='.'))
-            return(match(pattern,string,ForceCase));
+            return(match(pattern, string, ForceCase));
           else
             return(false);
         }
@@ -204,12 +212,12 @@ bool match(const char *pattern,const char *string,bool ForceCase)
 
 
 #ifndef SFX_MODULE
-bool match(const wchar *pattern,const wchar *string,bool ForceCase)
+bool match(const wchar *pattern, const wchar *string, bool ForceCase)
 {
   for (;; ++string)
   {
-    wchar stringc=touppercw(*string,ForceCase);
-    wchar patternc=touppercw(*pattern++,ForceCase);
+    wchar stringc=touppercw(*string, ForceCase);
+    wchar patternc=touppercw(*pattern++, ForceCase);
     switch (patternc)
     {
       case 0:
@@ -231,13 +239,13 @@ bool match(const wchar *pattern,const wchar *string,bool ForceCase)
           if (dot!=NULL)
           {
             string=dot;
-            if (wcspbrk(pattern,L"*?")==NULL && wcschr(string+1,'.')==NULL)
-              return(mwcsicompc(pattern+1,string+1,ForceCase)==0);
+            if (wcspbrk(pattern, L"*?")==NULL && wcschr(string+1,'.')==NULL)
+              return(mwcsicompc(pattern+1, string+1, ForceCase)==0);
           }
         }
 
         while (*string)
-          if (match(pattern,string++,ForceCase))
+          if (match(pattern, string++, ForceCase))
             return(true);
         return(false);
       default:
@@ -245,7 +253,7 @@ bool match(const wchar *pattern,const wchar *string,bool ForceCase)
         {
           // Allow "name." mask match "name" and "name.\" match "name\".
           if (patternc=='.' && (stringc==0 || stringc=='\\' || stringc=='.'))
-            return(match(pattern,string,ForceCase));
+            return(match(pattern, string, ForceCase));
           else
             return(false);
         }
@@ -256,45 +264,45 @@ bool match(const wchar *pattern,const wchar *string,bool ForceCase)
 #endif
 
 
-int mstricompc(const char *Str1,const char *Str2,bool ForceCase)
+int mstricompc(const char *Str1, const char *Str2, bool ForceCase)
 {
   if (ForceCase)
-    return(strcmp(Str1,Str2));
-  return(stricompc(Str1,Str2));
+    return(strcmp(Str1, Str2));
+  return(stricompc(Str1, Str2));
 }
 
 
 #ifndef SFX_MODULE
-int mwcsicompc(const wchar *Str1,const wchar *Str2,bool ForceCase)
+int mwcsicompc(const wchar *Str1, const wchar *Str2, bool ForceCase)
 {
   if (ForceCase)
-    return(wcscmp(Str1,Str2));
-  return(wcsicompc(Str1,Str2));
+    return(wcscmp(Str1, Str2));
+  return(wcsicompc(Str1, Str2));
 }
 #endif
 
 
-int mstrnicompc(const char *Str1,const char *Str2,size_t N,bool ForceCase)
+int mstrnicompc(const char *Str1, const char *Str2, size_t N, bool ForceCase)
 {
   if (ForceCase)
-    return(strncmp(Str1,Str2,N));
+    return(strncmp(Str1, Str2, N));
 #if defined(_UNIX)
-  return(strncmp(Str1,Str2,N));
+  return(strncmp(Str1, Str2, N));
 #else
-  return(strnicomp(Str1,Str2,N));
+  return(strnicomp(Str1, Str2, N));
 #endif
 }
 
 
 #ifndef SFX_MODULE
-int mwcsnicompc(const wchar *Str1,const wchar *Str2,size_t N,bool ForceCase)
+int mwcsnicompc(const wchar *Str1, const wchar *Str2, size_t N, bool ForceCase)
 {
   if (ForceCase)
-    return(wcsncmp(Str1,Str2,N));
+    return(wcsncmp(Str1, Str2, N));
 #if defined(_UNIX)
-  return(wcsncmp(Str1,Str2,N));
+  return(wcsncmp(Str1, Str2, N));
 #else
-  return(wcsnicomp(Str1,Str2,N));
+  return(wcsnicomp(Str1, Str2, N));
 #endif
 }
 #endif
