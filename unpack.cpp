@@ -237,6 +237,7 @@ void Unpack::Unpack29(bool Solid)
             if (!UnpReadBuf())
                 break;
         }
+
         if ((   ((WrPtr-UnpPtr) & MAXWINMASK) < 260) &&
                 (WrPtr != UnpPtr) )
         {
@@ -247,6 +248,7 @@ void Unpack::Unpack29(bool Solid)
                 FileExtracted = false;
                 return;
         }
+
         if (UnpBlockType == BLOCK_PPM)
         {
             // Here speed is critical, so we do not use SafePPMDecodeChar,
@@ -259,6 +261,7 @@ void Unpack::Unpack29(bool Solid)
                 UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
                 break;
             }
+
             if (Ch == PPMEscChar)
             {
                 int NextCh = SafePPMDecodeChar();
@@ -268,31 +271,41 @@ void Unpack::Unpack29(bool Solid)
                         break;
                     continue;
                 }
+
                 if (NextCh == -1) // Corrupt PPM data found.
                     break;
+
                 if (NextCh == 2)  // End of file in PPM mode..
                     break;
+
                 if (NextCh == 3)  // Read VM code.
                 {
                     if (!ReadVMCodePPM())
                         break;
                     continue;
                 }
+
                 if (NextCh == 4) // LZ inside of m_ppm.
                 {
                     unsigned int Distance=0, Length;
                     bool Failed = false;
+
                     for (int i=0;i<4 && !Failed;i++)
                     {
                         int Ch = SafePPMDecodeChar();
                         if (Ch == -1)
+                        {
                             Failed = true;
+                        }
                         else
+                        {
                             if (i == 3)
                                 Length = (byte)Ch;
                             else
-                                Distance = (Distance<<8) + (byte)Ch;
+                                Distance = (Distance << 8) + (byte)Ch;
+                        }
                     }
+
                     if (Failed)
                         break;
 
@@ -304,12 +317,15 @@ void Unpack::Unpack29(bool Solid)
                     int Length = SafePPMDecodeChar();
                     if (Length == -1)
                         break;
+
                     CopyString(Length + 4, 1);
                     continue;
                 }
                 // If we are here, NextCh must be 1, what means that current byte
                 // is equal to our 'escape' byte, so we just store it to Window.
-            }
+
+            } // end of `if (Ch == PPMEscChar)`
+
             Window[UnpPtr++] = Ch;
             continue;
         }
@@ -321,6 +337,7 @@ void Unpack::Unpack29(bool Solid)
             Window[UnpPtr++] = (byte)Number;
             continue;
         }
+
         if (Number >= 271)
         {
             int Length = LDecode[Number-=271] + 3;
@@ -380,24 +397,28 @@ void Unpack::Unpack29(bool Solid)
             CopyString(Length, Distance);
             continue;
         }
+
         if (Number == 256)
         {
             if (!ReadEndOfBlock())
                 break;
             continue;
         }
+
         if (Number == 257)
         {
             if (!ReadVMCode())
                 break;
             continue;
         }
+
         if (Number == 258)
         {
             if (LastLength != 0)
                 CopyString(LastLength, LastDist);
             continue;
         }
+
         if (Number < 263)
         {
             int DistNum           = Number - 259;
@@ -419,6 +440,7 @@ void Unpack::Unpack29(bool Solid)
             CopyString(Length, Distance);
             continue;
         }
+
         if (Number<272)
         {
             unsigned int Distance = SDDecode[Number-=263]+1;
