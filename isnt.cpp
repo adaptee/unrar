@@ -1,10 +1,10 @@
-#include "rar.hpp"
+//#include "rar.hpp"
 
 #ifdef _WIN_ALL
 DWORD WinNT()
 {
   static int dwPlatformId=-1;
-  static DWORD dwMajorVersion,dwMinorVersion;
+  static DWORD dwMajorVersion, dwMinorVersion;
   if (dwPlatformId==-1)
   {
     OSVERSIONINFO WinVer;
