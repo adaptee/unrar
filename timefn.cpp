@@ -1,4 +1,10 @@
-#include "rar.hpp"
+#include "timefn.hpp"
+
+#include <stdio.h>
+#include <string.h>
+#include "strfn.hpp"
+#include "loclang.hpp"
+#include "resource.hpp"
 
 RarTime::RarTime()
 {
@@ -22,7 +28,7 @@ RarTime& RarTime::operator =(FILETIME &ft)
   rlt.yDay=rlt.Day-1;
   for (uint I=1;I<rlt.Month;I++)
   {
-    static int mdays[12]={31,28,31,30,31,30,31,31,30,31,30,31};
+    static int mdays[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     rlt.yDay+=mdays[I-1];
   }
   if (rlt.Month>2 && IsLeapYear(rlt.Year))
@@ -34,8 +40,8 @@ RarTime& RarTime::operator =(FILETIME &ft)
 
   // Calculate the time reminder, which is the part of time smaller
   // than 1 second, represented in 100-nanosecond intervals.
-  rlt.Reminder=INT32TO64(lft.dwHighDateTime,lft.dwLowDateTime)-
-               INT32TO64(zft.dwHighDateTime,zft.dwLowDateTime);
+  rlt.Reminder=INT32TO64(lft.dwHighDateTime, lft.dwLowDateTime)-
+               INT32TO64(zft.dwHighDateTime, zft.dwLowDateTime);
   return(*this);
 }
 
@@ -55,7 +61,7 @@ void RarTime::GetWin32(FILETIME *ft)
   lft.dwLowDateTime+=rlt.Reminder;
   if (lft.dwLowDateTime<rlt.Reminder)
     lft.dwHighDateTime++;
-  LocalFileTimeToFileTime(&lft,ft);
+  LocalFileTimeToFileTime(&lft, ft);
 }
 #endif
 
@@ -107,10 +113,10 @@ int64 RarTime::GetRaw()
 #ifdef _WIN_ALL
   FILETIME ft;
   GetWin32(&ft);
-  return(INT32TO64(ft.dwHighDateTime,ft.dwLowDateTime));
+  return(INT32TO64(ft.dwHighDateTime, ft.dwLowDateTime));
 #elif defined(_UNIX) || defined(_EMX)
   time_t ut=GetUnix();
-  return(INT32TO64(0,ut)*10000000+rlt.Reminder);
+  return(INT32TO64(0, ut)*10000000+rlt.Reminder);
 #else
   // We should never be here. It is better to use standard time functions.
 
@@ -119,7 +125,7 @@ int64 RarTime::GetRaw()
   int64 r=(rlt.Year-1970)*365; // Days since 1970.
 
   // Cumulative day value for beginning of every month.
-  static int MonthToDay[12]={0,31,60,91,121,152,182,213,244,274,305,335};
+  static int MonthToDay[12]={0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335};
 
   r+=MonthToDay[rlt.Month-1]+(rlt.Day-1); // Add days since beginning of year.
   r=r*24+rlt.Hour;   // Hours.
@@ -158,7 +164,7 @@ void RarTime::SetRaw(int64 RawTime)
   RawTime%=365;      // Days since beginning of year.
 
   // Cumulative day value for beginning of every month.
-  static int MonthToDay[12]={0,31,60,91,121,152,182,213,244,274,305,335};
+  static int MonthToDay[12]={0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335};
 
   for (int I=0;I<12;I++)
     if (RawTime>=MonthToDay[I])
@@ -228,12 +234,12 @@ void RarTime::SetDos(uint DosTime)
 
 
 #if !defined(GUI) || !defined(SFX_MODULE)
-void RarTime::GetText(char *DateStr,bool FullYear)
+void RarTime::GetText(char *DateStr, bool FullYear)
 {
   if (FullYear)
-    sprintf(DateStr,"%02u-%02u-%u %02u:%02u",rlt.Day,rlt.Month,rlt.Year,rlt.Hour,rlt.Minute);
+    sprintf(DateStr,"%02u-%02u-%u %02u:%02u", rlt.Day, rlt.Month, rlt.Year, rlt.Hour, rlt.Minute);
   else
-    sprintf(DateStr,"%02u-%02u-%02u %02u:%02u",rlt.Day,rlt.Month,rlt.Year%100,rlt.Hour,rlt.Minute);
+    sprintf(DateStr,"%02u-%02u-%02u %02u:%02u", rlt.Day, rlt.Month, rlt.Year%100, rlt.Hour, rlt.Minute);
 }
 #endif
 
@@ -242,7 +248,7 @@ void RarTime::GetText(char *DateStr,bool FullYear)
 void RarTime::SetIsoText(char *TimeText)
 {
   int Field[6];
-  memset(Field,0,sizeof(Field));
+  memset(Field, 0, sizeof(Field));
   for (int DigitCount=0;*TimeText!=0;TimeText++)
     if (IsDigit(*TimeText))
     {
@@ -265,7 +271,7 @@ void RarTime::SetIsoText(char *TimeText)
 #ifndef SFX_MODULE
 void RarTime::SetAgeText(char *TimeText)
 {
-  uint Seconds=0,Value=0;
+  uint Seconds=0, Value=0;
   for (int I=0;TimeText[I]!=0;I++)
   {
     int Ch=TimeText[I];
@@ -293,7 +299,7 @@ void RarTime::SetAgeText(char *TimeText)
   }
   SetCurrentTime();
   int64 RawTime=GetRaw();
-  SetRaw(RawTime-INT32TO64(0,Seconds)*10000000);
+  SetRaw(RawTime-INT32TO64(0, Seconds)*10000000);
 }
 #endif
 
@@ -321,8 +327,8 @@ const char *GetMonthName(int Month)
   return("");
 #else
   static MSGID MonthID[]={
-         MMonthJan,MMonthFeb,MMonthMar,MMonthApr,MMonthMay,MMonthJun,
-         MMonthJul,MMonthAug,MMonthSep,MMonthOct,MMonthNov,MMonthDec
+         MMonthJan, MMonthFeb, MMonthMar, MMonthApr, MMonthMay, MMonthJun,
+         MMonthJul, MMonthAug, MMonthSep, MMonthOct, MMonthNov, MMonthDec
   };
   return(St(MonthID[Month]));
 #endif

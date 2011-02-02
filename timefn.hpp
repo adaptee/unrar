@@ -1,6 +1,10 @@
 #ifndef _RAR_TIMEFN_
 #define _RAR_TIMEFN_
 
+#include "raros.hpp"
+#include "os.hpp"
+#include "rartypes.hpp"
+
 struct RarLocalTime
 {
   uint Year;
@@ -40,7 +44,7 @@ class RarTime
     void SetRaw(int64 RawTime);
     uint GetDos();
     void SetDos(uint DosTime);
-    void GetText(char *DateStr,bool FullYear);
+    void GetText(char *DateStr, bool FullYear);
     void SetIsoText(char *TimeText);
     void SetAgeText(char *TimeText);
     void SetCurrentTime();
