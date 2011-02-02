@@ -1,4 +1,9 @@
-#include "rar.hpp"
+#include "crypt.hpp"
+#include "crc.hpp"
+#include "unicode.hpp"
+#include "sha1.hpp"
+
+
 
 #ifndef SFX_MODULE
 extern uint CRCTab[256];
@@ -6,8 +11,8 @@ extern uint CRCTab[256];
 
 #define NROUNDS 32
 
-#define  rol(x,n,xsize)  (((x)<<(n)) | ((x)>>(xsize-(n))))
-#define  ror(x,n,xsize)  (((x)>>(n)) | ((x)<<(xsize-(n))))
+#define  rol(x, n, xsize)  (((x)<<(n)) | ((x)>>(xsize-(n))))
+#define  ror(x, n, xsize)  (((x)>>(n)) | ((x)<<(xsize-(n))))
 
 #define substLong(t) ( (uint)SubstTable[(uint)t&255] | \
            ((uint)SubstTable[(int)(t>> 8)&255]<< 8) | \
@@ -20,37 +25,37 @@ int CryptData::CachePos=0;
 
 #ifndef SFX_MODULE
 static byte InitSubstTable[256]={
-  215, 19,149, 35, 73,197,192,205,249, 28, 16,119, 48,221,  2, 42,
-  232,  1,177,233, 14, 88,219, 25,223,195,244, 90, 87,239,153,137,
-  255,199,147, 70, 92, 66,246, 13,216, 40, 62, 29,217,230, 86,  6,
-   71, 24,171,196,101,113,218,123, 93, 91,163,178,202, 67, 44,235,
-  107,250, 75,234, 49,167,125,211, 83,114,157,144, 32,193,143, 36,
-  158,124,247,187, 89,214,141, 47,121,228, 61,130,213,194,174,251,
-   97,110, 54,229,115, 57,152, 94,105,243,212, 55,209,245, 63, 11,
-  164,200, 31,156, 81,176,227, 21, 76, 99,139,188,127, 17,248, 51,
-  207,120,189,210,  8,226, 41, 72,183,203,135,165,166, 60, 98,  7,
-  122, 38,155,170, 69,172,252,238, 39,134, 59,128,236, 27,240, 80,
-  131,  3, 85,206,145, 79,154,142,159,220,201,133, 74, 64, 20,129,
-  224,185,138,103,173,182, 43, 34,254, 82,198,151,231,180, 58, 10,
-  118, 26,102, 12, 50,132, 22,191,136,111,162,179, 45,  4,148,108,
-  161, 56, 78,126,242,222, 15,175,146, 23, 33,241,181,190, 77,225,
-    0, 46,169,186, 68, 95,237, 65, 53,208,253,168,  9, 18,100, 52,
-  116,184,160, 96,109, 37, 30,106,140,104,150,  5,204,117,112, 84
+  215, 19, 149, 35, 73, 197, 192, 205, 249, 28, 16, 119, 48, 221, 2, 42,
+  232, 1, 177, 233, 14, 88, 219, 25, 223, 195, 244, 90, 87, 239, 153, 137,
+  255, 199, 147, 70, 92, 66, 246, 13, 216, 40, 62, 29, 217, 230, 86, 6,
+   71, 24, 171, 196, 101, 113, 218, 123, 93, 91, 163, 178, 202, 67, 44, 235,
+  107, 250, 75, 234, 49, 167, 125, 211, 83, 114, 157, 144, 32, 193, 143, 36,
+  158, 124, 247, 187, 89, 214, 141, 47, 121, 228, 61, 130, 213, 194, 174, 251,
+   97, 110, 54, 229, 115, 57, 152, 94, 105, 243, 212, 55, 209, 245, 63, 11,
+  164, 200, 31, 156, 81, 176, 227, 21, 76, 99, 139, 188, 127, 17, 248, 51,
+  207, 120, 189, 210, 8, 226, 41, 72, 183, 203, 135, 165, 166, 60, 98, 7,
+  122, 38, 155, 170, 69, 172, 252, 238, 39, 134, 59, 128, 236, 27, 240, 80,
+  131, 3, 85, 206, 145, 79, 154, 142, 159, 220, 201, 133, 74, 64, 20, 129,
+  224, 185, 138, 103, 173, 182, 43, 34, 254, 82, 198, 151, 231, 180, 58, 10,
+  118, 26, 102, 12, 50, 132, 22, 191, 136, 111, 162, 179, 45, 4, 148, 108,
+  161, 56, 78, 126, 242, 222, 15, 175, 146, 23, 33, 241, 181, 190, 77, 225,
+    0, 46, 169, 186, 68, 95, 237, 65, 53, 208, 253, 168, 9, 18, 100, 52,
+  116, 184, 160, 96, 109, 37, 30, 106, 140, 104, 150, 5, 204, 117, 112, 84
 };
 #endif
 
 
 
-void CryptData::DecryptBlock(byte *Buf,size_t Size)
+void CryptData::DecryptBlock(byte *Buf, size_t Size)
 {
-  rin.blockDecrypt(Buf,Size,Buf);
+  rin.blockDecrypt(Buf, Size, Buf);
 }
 
 
 #ifndef SFX_MODULE
 void CryptData::EncryptBlock20(byte *Buf)
 {
-  uint A,B,C,D,T,TA,TB;
+  uint A, B, C, D, T, TA, TB;
 #if defined(BIG_ENDIAN) || !defined(PRESENT_INT32) || !defined(ALLOW_NOT_ALIGNED_INT)
   A=((uint)Buf[0]|((uint)Buf[1]<<8)|((uint)Buf[2]<<16)|((uint)Buf[3]<<24))^Key[0];
   B=((uint)Buf[4]|((uint)Buf[5]<<8)|((uint)Buf[6]<<16)|((uint)Buf[7]<<24))^Key[1];
@@ -65,9 +70,9 @@ void CryptData::EncryptBlock20(byte *Buf)
 #endif
   for(int I=0;I<NROUNDS;I++)
   {
-    T=((C+rol(D,11,32))^Key[I&3]);
+    T=((C+rol(D, 11, 32))^Key[I&3]);
     TA=A^substLong(T);
-    T=((D^rol(C,17,32))+Key[I&3]);
+    T=((D^rol(C, 17, 32))+Key[I&3]);
     TB=B^substLong(T);
     A=C;
     B=D;
@@ -108,7 +113,7 @@ void CryptData::EncryptBlock20(byte *Buf)
 void CryptData::DecryptBlock20(byte *Buf)
 {
   byte InBuf[16];
-  uint A,B,C,D,T,TA,TB;
+  uint A, B, C, D, T, TA, TB;
 #if defined(BIG_ENDIAN) || !defined(PRESENT_INT32) || !defined(ALLOW_NOT_ALIGNED_INT)
   A=((uint)Buf[0]|((uint)Buf[1]<<8)|((uint)Buf[2]<<16)|((uint)Buf[3]<<24))^Key[0];
   B=((uint)Buf[4]|((uint)Buf[5]<<8)|((uint)Buf[6]<<16)|((uint)Buf[7]<<24))^Key[1];
@@ -121,12 +126,12 @@ void CryptData::DecryptBlock20(byte *Buf)
   C=BufPtr[2]^Key[2];
   D=BufPtr[3]^Key[3];
 #endif
-  memcpy(InBuf,Buf,sizeof(InBuf));
+  memcpy(InBuf, Buf, sizeof(InBuf));
   for(int I=NROUNDS-1;I>=0;I--)
   {
-    T=((C+rol(D,11,32))^Key[I&3]);
+    T=((C+rol(D, 11, 32))^Key[I&3]);
     TA=A^substLong(T);
-    T=((D^rol(C,17,32))+Key[I&3]);
+    T=((D^rol(C, 17, 32))+Key[I&3]);
     TB=B^substLong(T);
     A=C;
     B=D;
@@ -176,7 +181,7 @@ void CryptData::UpdKeys(byte *Buf)
 }
 
 
-void CryptData::Swap(byte *Ch1,byte *Ch2)
+void CryptData::Swap(byte *Ch1, byte *Ch2)
 {
   byte Ch=*Ch1;
   *Ch1=*Ch2;
@@ -185,7 +190,7 @@ void CryptData::Swap(byte *Ch1,byte *Ch2)
 #endif
 
 
-void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt,bool OldOnly,bool HandsOffHash)
+void CryptData::SetCryptKeys(const wchar *Password, const byte *Salt, bool Encrypt, bool OldOnly, bool HandsOffHash)
 {
   if (*Password==0)
     return;
@@ -195,10 +200,10 @@ void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt
     if (CRCTab[1]==0)
       InitCRC();
     char Psw[MAXPASSWORD];
-    memset(Psw,0,sizeof(Psw));
+    memset(Psw, 0, sizeof(Psw));
 
     // We need to use ASCII password for older encryption algorithms.
-    WideToChar(Password,Psw,ASIZE(Psw));
+    WideToChar(Password, Psw, ASIZE(Psw));
     Psw[ASIZE(Psw)-1]=0;
 
     size_t PswLength=strlen(Psw);
@@ -209,13 +214,13 @@ void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt
     Key[2]=0x7515A235L;
     Key[3]=0xA4E7F123L;
 
-    memcpy(SubstTable,InitSubstTable,sizeof(SubstTable));
+    memcpy(SubstTable, InitSubstTable, sizeof(SubstTable));
     for (int J=0;J<256;J++)
       for (size_t I=0;I<PswLength;I+=2)
       {
         uint N1=(byte)CRCTab [ (byte(Psw[I])   - J) &0xff];
         uint N2=(byte)CRCTab [ (byte(Psw[I+1]) + J) &0xff];
-        for (int K=1;N1!=N2;N1=(N1+1)&0xff,K++)
+        for (int K=1;N1!=N2;N1=(N1+1)&0xff, K++)
           Swap(&SubstTable[N1],&SubstTable[(N1+I+K)&0xff]);
       }
     for (size_t I=0;I<PswLength;I+=16)
@@ -226,13 +231,13 @@ void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt
 
   bool Cached=false;
   for (uint I=0;I<ASIZE(Cache);I++)
-    if (wcscmp(Cache[I].Password,Password)==0 &&
+    if (wcscmp(Cache[I].Password, Password)==0 &&
         (Salt==NULL && !Cache[I].SaltPresent || Salt!=NULL &&
-        Cache[I].SaltPresent && memcmp(Cache[I].Salt,Salt,SALT_SIZE)==0) &&
+        Cache[I].SaltPresent && memcmp(Cache[I].Salt, Salt, SALT_SIZE)==0) &&
         Cache[I].HandsOffHash==HandsOffHash)
     {
-      memcpy(AESKey,Cache[I].AESKey,sizeof(AESKey));
-      memcpy(AESInit,Cache[I].AESInit,sizeof(AESInit));
+      memcpy(AESKey, Cache[I].AESKey, sizeof(AESKey));
+      memcpy(AESInit, Cache[I].AESInit, sizeof(AESInit));
       Cached=true;
       break;
     }
@@ -240,11 +245,11 @@ void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt
   if (!Cached)
   {
     byte RawPsw[2*MAXPASSWORD+SALT_SIZE];
-    WideToRaw(Password,RawPsw);
+    WideToRaw(Password, RawPsw);
     size_t RawLength=2*wcslen(Password);
     if (Salt!=NULL)
     {
-      memcpy(RawPsw+RawLength,Salt,SALT_SIZE);
+      memcpy(RawPsw+RawLength, Salt, SALT_SIZE);
       RawLength+=SALT_SIZE;
     }
     hash_context c;
@@ -273,22 +278,22 @@ void CryptData::SetCryptKeys(const wchar *Password,const byte *Salt,bool Encrypt
       for (int J=0;J<4;J++)
         AESKey[I*4+J]=(byte)(digest[I]>>(J*8));
 
-    wcscpy(Cache[CachePos].Password,Password);
+    wcscpy(Cache[CachePos].Password, Password);
     if ((Cache[CachePos].SaltPresent=(Salt!=NULL))==true)
-      memcpy(Cache[CachePos].Salt,Salt,SALT_SIZE);
+      memcpy(Cache[CachePos].Salt, Salt, SALT_SIZE);
     Cache[CachePos].HandsOffHash=HandsOffHash;
-    memcpy(Cache[CachePos].AESKey,AESKey,sizeof(AESKey));
-    memcpy(Cache[CachePos].AESInit,AESInit,sizeof(AESInit));
+    memcpy(Cache[CachePos].AESKey, AESKey, sizeof(AESKey));
+    memcpy(Cache[CachePos].AESInit, AESInit, sizeof(AESInit));
     CachePos=(CachePos+1)%(sizeof(Cache)/sizeof(Cache[0]));
   }
-  rin.init(Encrypt ? Rijndael::Encrypt : Rijndael::Decrypt,AESKey,AESInit);
+  rin.init(Encrypt ? Rijndael::Encrypt : Rijndael::Decrypt, AESKey, AESInit);
 }
 
 
 #ifndef SFX_MODULE
 void CryptData::SetOldKeys(const char *Password)
 {
-  uint PswCRC=CRC(0xffffffff,Password,strlen(Password));
+  uint PswCRC=CRC(0xffffffff, Password, strlen(Password));
   OldKey[0]=PswCRC&0xffff;
   OldKey[1]=(PswCRC>>16)&0xffff;
   OldKey[2]=OldKey[3]=0;
@@ -299,7 +304,7 @@ void CryptData::SetOldKeys(const char *Password)
     PN1+=Ch;
     PN2^=Ch;
     PN3+=Ch;
-    PN3=(byte)rol(PN3,1,8);
+    PN3=(byte)rol(PN3, 1, 8);
     OldKey[2]^=Ch^CRCTab[Ch];
     OldKey[3]+=Ch+(CRCTab[Ch]>>16);
     Password++;
@@ -324,19 +329,19 @@ void CryptData::SetCmt13Encryption()
 }
 
 
-void CryptData::Crypt(byte *Data,uint Count,int Method)
+void CryptData::Crypt(byte *Data, uint Count, int Method)
 {
   if (Method==OLD_DECODE)
-    Decode13(Data,Count);
+    Decode13(Data, Count);
   else
     if (Method==OLD_ENCODE)
-      Encode13(Data,Count);
+      Encode13(Data, Count);
     else
-      Crypt15(Data,Count);
+      Crypt15(Data, Count);
 }
 
 
-void CryptData::Encode13(byte *Data,uint Count)
+void CryptData::Encode13(byte *Data, uint Count)
 {
   while (Count--)
   {
@@ -348,7 +353,7 @@ void CryptData::Encode13(byte *Data,uint Count)
 }
 
 
-void CryptData::Decode13(byte *Data,uint Count)
+void CryptData::Decode13(byte *Data, uint Count)
 {
   while (Count--)
   {
@@ -360,7 +365,7 @@ void CryptData::Decode13(byte *Data,uint Count)
 }
 
 
-void CryptData::Crypt15(byte *Data,uint Count)
+void CryptData::Crypt15(byte *Data, uint Count)
 {
   while (Count--)
   {
@@ -368,8 +373,8 @@ void CryptData::Crypt15(byte *Data,uint Count)
     OldKey[1]^=CRCTab[(OldKey[0] & 0x1fe)>>1];
     OldKey[2]-=CRCTab[(OldKey[0] & 0x1fe)>>1]>>16;
     OldKey[0]^=OldKey[2];
-    OldKey[3]=ror(OldKey[3]&0xffff,1,16)^OldKey[1];
-    OldKey[3]=ror(OldKey[3]&0xffff,1,16);
+    OldKey[3]=ror(OldKey[3]&0xffff, 1, 16)^OldKey[1];
+    OldKey[3]=ror(OldKey[3]&0xffff, 1, 16);
     OldKey[0]^=OldKey[3];
     *Data^=(byte)(OldKey[0]>>8);
     Data++;
