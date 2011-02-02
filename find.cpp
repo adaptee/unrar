@@ -1,4 +1,19 @@
-#include "rar.hpp"
+#include "find.hpp"
+
+#include "rardefs.hpp"
+#include "unicode.hpp"
+#include "pathfn.hpp"
+#include "strfn.hpp"
+#include "filefn.hpp"
+#include "match.hpp"
+#include "log.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+
+#include "errhnd.hpp"
+//FIXME; duplicated info
+extern ErrorHandler ErrHandler;
+
 
 FindFile::FindFile()
 {
@@ -27,9 +42,9 @@ FindFile::~FindFile()
 
 void FindFile::SetMask(const char *FindMask)
 {
-  strcpy(FindFile::FindMask,FindMask);
+  strcpy(FindFile::FindMask, FindMask);
   if (*FindMaskW==0)
-    CharToWide(FindMask,FindMaskW);
+    CharToWide(FindMask, FindMaskW);
   FirstCall=true;
 }
 
@@ -38,14 +53,14 @@ void FindFile::SetMaskW(const wchar *FindMaskW)
 {
   if (FindMaskW==NULL)
     return;
-  wcscpy(FindFile::FindMaskW,FindMaskW);
+  wcscpy(FindFile::FindMaskW, FindMaskW);
   if (*FindMask==0)
-    WideToChar(FindMaskW,FindMask);
+    WideToChar(FindMaskW, FindMask);
   FirstCall=true;
 }
 
 
-bool FindFile::Next(struct FindData *fd,bool GetSymLink)
+bool FindFile::Next(struct FindData *fd, bool GetSymLink)
 {
   fd->Error=false;
   if (*FindMask==0)
@@ -53,17 +68,17 @@ bool FindFile::Next(struct FindData *fd,bool GetSymLink)
 #ifdef _WIN_ALL
   if (FirstCall)
   {
-    if ((hFind=Win32Find(INVALID_HANDLE_VALUE,FindMask,FindMaskW,fd))==INVALID_HANDLE_VALUE)
+    if ((hFind=Win32Find(INVALID_HANDLE_VALUE, FindMask, FindMaskW, fd))==INVALID_HANDLE_VALUE)
       return(false);
   }
   else
-    if (Win32Find(hFind,FindMask,FindMaskW,fd)==INVALID_HANDLE_VALUE)
+    if (Win32Find(hFind, FindMask, FindMaskW, fd)==INVALID_HANDLE_VALUE)
       return(false);
 #else
   if (FirstCall)
   {
     char DirName[NM];
-    strcpy(DirName,FindMask);
+    strcpy(DirName, FindMask);
     RemoveNameFromPath(DirName);
     if (*DirName==0)
       strcpy(DirName,".");
@@ -80,36 +95,36 @@ bool FindFile::Next(struct FindData *fd,bool GetSymLink)
       return(false);
     if (strcmp(ent->d_name,".")==0 || strcmp(ent->d_name,"..")==0)
       continue;
-    if (CmpName(FindMask,ent->d_name,MATCH_NAMES))
+    if (CmpName(FindMask, ent->d_name, MATCH_NAMES))
     {
       char FullName[NM];
-      strcpy(FullName,FindMask);
+      strcpy(FullName, FindMask);
       *PointToName(FullName)=0;
       if (strlen(FullName)+strlen(ent->d_name)>=ASIZE(FullName)-1)
       {
 #ifndef SILENT
-        Log(NULL,"\n%s%s",FullName,ent->d_name);
-        Log(NULL,St(MPathTooLong));
+        Log(NULL,"\n%s%s", FullName, ent->d_name);
+        Log(NULL, St(MPathTooLong));
 #endif
         return(false);
       }
-      strcat(FullName,ent->d_name);
-      if (!FastFind(FullName,NULL,fd,GetSymLink))
+      strcat(FullName, ent->d_name);
+      if (!FastFind(FullName, NULL, fd, GetSymLink))
       {
         ErrHandler.OpenErrorMsg(FullName);
         continue;
       }
-      strcpy(fd->Name,FullName);
+      strcpy(fd->Name, FullName);
       break;
     }
   }
   *fd->NameW=0;
 #ifdef _APPLE
   if (!LowAscii(fd->Name))
-    UtfToWide(fd->Name,fd->NameW,sizeof(fd->NameW));
+    UtfToWide(fd->Name, fd->NameW, sizeof(fd->NameW));
 #elif defined(UNICODE_SUPPORTED)
   if (!LowAscii(fd->Name) && UnicodeEnabled())
-    CharToWide(fd->Name,fd->NameW);
+    CharToWide(fd->Name, fd->NameW);
 #endif
 #endif
   fd->Flags=0;
@@ -122,15 +137,15 @@ bool FindFile::Next(struct FindData *fd,bool GetSymLink)
 }
 
 
-bool FindFile::FastFind(const char *FindMask,const wchar *FindMaskW,FindData *fd,bool GetSymLink)
+bool FindFile::FastFind(const char *FindMask, const wchar *FindMaskW, FindData *fd, bool GetSymLink)
 {
   fd->Error=false;
 #ifndef _UNIX
-  if (IsWildcard(FindMask,FindMaskW))
+  if (IsWildcard(FindMask, FindMaskW))
     return(false);
-#endif    
+#endif
 #ifdef _WIN_ALL
-  HANDLE hFind=Win32Find(INVALID_HANDLE_VALUE,FindMask,FindMaskW,fd);
+  HANDLE hFind=Win32Find(INVALID_HANDLE_VALUE, FindMask, FindMaskW, fd);
   if (hFind==INVALID_HANDLE_VALUE)
     return(false);
   FindClose(hFind);
@@ -155,7 +170,7 @@ bool FindFile::FastFind(const char *FindMask,const wchar *FindMaskW,FindData *fd
       return(false);
     }
 #ifdef _DJGPP
-  fd->FileAttr=_chmod(FindMask,0);
+  fd->FileAttr=_chmod(FindMask, 0);
 #elif defined(_EMX)
   fd->FileAttr=st.st_attr;
 #else
@@ -167,15 +182,15 @@ bool FindFile::FastFind(const char *FindMask,const wchar *FindMaskW,FindData *fd
   fd->atime=st.st_atime;
   fd->ctime=st.st_ctime;
   fd->FileTime=fd->mtime.GetDos();
-  strcpy(fd->Name,FindMask);
+  strcpy(fd->Name, FindMask);
 
   *fd->NameW=0;
 #ifdef _APPLE
   if (!LowAscii(fd->Name))
-    UtfToWide(fd->Name,fd->NameW,sizeof(fd->NameW));
+    UtfToWide(fd->Name, fd->NameW, sizeof(fd->NameW));
 #elif defined(UNICODE_SUPPORTED)
   if (!LowAscii(fd->Name) && UnicodeEnabled())
-    CharToWide(fd->Name,fd->NameW);
+    CharToWide(fd->Name, fd->NameW);
 #endif
 #endif
   fd->Flags=0;
@@ -185,7 +200,7 @@ bool FindFile::FastFind(const char *FindMask,const wchar *FindMaskW,FindData *fd
 
 
 #ifdef _WIN_ALL
-HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,FindData *fd)
+HANDLE FindFile::Win32Find(HANDLE hFind, const char *Mask, const wchar *MaskW, FindData *fd)
 {
 #ifndef _WIN_CE
   if (WinNT())
@@ -193,9 +208,9 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,Find
   {
     wchar WideMask[NM];
     if (MaskW!=NULL && *MaskW!=0)
-      wcscpy(WideMask,MaskW);
+      wcscpy(WideMask, MaskW);
     else
-      CharToWide(Mask,WideMask);
+      CharToWide(Mask, WideMask);
 
     WIN32_FIND_DATAW FindData;
     if (hFind==INVALID_HANDLE_VALUE)
@@ -218,12 +233,12 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,Find
 
     if (hFind!=INVALID_HANDLE_VALUE)
     {
-      wcscpy(fd->NameW,WideMask);
-      wcscpy(PointToName(fd->NameW),FindData.cFileName);
-      WideToChar(fd->NameW,fd->Name);
-      fd->Size=INT32TO64(FindData.nFileSizeHigh,FindData.nFileSizeLow);
+      wcscpy(fd->NameW, WideMask);
+      wcscpy(PointToName(fd->NameW), FindData.cFileName);
+      WideToChar(fd->NameW, fd->Name);
+      fd->Size=INT32TO64(FindData.nFileSizeHigh, FindData.nFileSizeLow);
       fd->FileAttr=FindData.dwFileAttributes;
-      wcscpy(fd->ShortName,FindData.cAlternateFileName);
+      wcscpy(fd->ShortName, FindData.cAlternateFileName);
       fd->ftCreationTime=FindData.ftCreationTime;
       fd->ftLastAccessTime=FindData.ftLastAccessTime;
       fd->ftLastWriteTime=FindData.ftLastWriteTime;
@@ -243,9 +258,9 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,Find
   {
     char CharMask[NM];
     if (Mask!=NULL && *Mask!=0)
-      strcpy(CharMask,Mask);
+      strcpy(CharMask, Mask);
     else
-      WideToChar(MaskW,CharMask);
+      WideToChar(MaskW, CharMask);
 
     WIN32_FIND_DATAA FindData;
     if (hFind==INVALID_HANDLE_VALUE)
@@ -266,12 +281,12 @@ HANDLE FindFile::Win32Find(HANDLE hFind,const char *Mask,const wchar *MaskW,Find
 
     if (hFind!=INVALID_HANDLE_VALUE)
     {
-      strcpy(fd->Name,CharMask);
-      strcpy(PointToName(fd->Name),FindData.cFileName);
-      CharToWide(fd->Name,fd->NameW);
-      fd->Size=INT32TO64(FindData.nFileSizeHigh,FindData.nFileSizeLow);
+      strcpy(fd->Name, CharMask);
+      strcpy(PointToName(fd->Name), FindData.cFileName);
+      CharToWide(fd->Name, fd->NameW);
+      fd->Size=INT32TO64(FindData.nFileSizeHigh, FindData.nFileSizeLow);
       fd->FileAttr=FindData.dwFileAttributes;
-      CharToWide(FindData.cAlternateFileName,fd->ShortName);
+      CharToWide(FindData.cAlternateFileName, fd->ShortName);
       fd->ftCreationTime=FindData.ftCreationTime;
       fd->ftLastAccessTime=FindData.ftLastAccessTime;
       fd->ftLastWriteTime=FindData.ftLastWriteTime;
