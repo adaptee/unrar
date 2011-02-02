@@ -1,15 +1,22 @@
 #ifndef _RAR_STRFN_
 #define _RAR_STRFN_
 
+#include <string.h>
+#include "raros.hpp"
+#include "os.hpp"
+#include "rartypes.hpp"
+
+
+
 const char *NullToEmpty(const char *Str);
 const wchar *NullToEmpty(const wchar *Str);
 char *IntNameToExt(const char *Name);
-void ExtToInt(const char *Src,char *Dest);
-void IntToExt(const char *Src,char *Dest);
+void ExtToInt(const char *Src, char *Dest);
+void IntToExt(const char *Src, char *Dest);
 char* strlower(char *Str);
 char* strupper(char *Str);
-int stricomp(const char *Str1,const char *Str2);
-int strnicomp(const char *Str1,const char *Str2,size_t N);
+int stricomp(const char *Str1, const char *Str2);
+int strnicomp(const char *Str1, const char *Str2, size_t N);
 char* RemoveEOL(char *Str);
 char* RemoveLF(char *Str);
 wchar* RemoveLF(wchar *Str);
@@ -32,14 +39,14 @@ bool LowAscii(const char *Str);
 bool LowAscii(const wchar *Str);
 
 
-int stricompc(const char *Str1,const char *Str2);
+int stricompc(const char *Str1, const char *Str2);
 #ifndef SFX_MODULE
-int wcsicompc(const wchar *Str1,const wchar *Str2);
+int wcsicompc(const wchar *Str1, const wchar *Str2);
 #endif
 
-void itoa(int64 n,char *Str);
+void itoa(int64 n, char *Str);
 int64 atoil(char *Str);
-void itoa(int64 n,wchar *Str);
+void itoa(int64 n, wchar *Str);
 int64 atoil(wchar *Str);
 const wchar* GetWide(const char *Src);
 
