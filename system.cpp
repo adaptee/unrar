@@ -1,5 +1,3 @@
-#include "rar.hpp"
-
 #ifndef _WIN_CE
 static int SleepTime=0;
 
@@ -53,12 +51,12 @@ void SetPriority(int Priority)
             PriorityClass=HIGH_PRIORITY_CLASS;
             PriorityLevel=Priority-13;
           }
-  SetPriorityClass(GetCurrentProcess(),PriorityClass);
-  SetThreadPriority(GetCurrentThread(),PriorityLevel);
+  SetPriorityClass(GetCurrentProcess(), PriorityClass);
+  SetThreadPriority(GetCurrentThread(), PriorityLevel);
 
 //  Background mode for Vista, too slow for real life use.
 //  if (WinNT()>=WNT_VISTA && Priority==1)
-//    SetPriorityClass(GetCurrentProcess(),PROCESS_MODE_BACKGROUND_BEGIN);
+//    SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
 
 #endif
 }
@@ -83,15 +81,15 @@ void Shutdown()
 {
   HANDLE hToken;
   TOKEN_PRIVILEGES tkp;
-  if (OpenProcessToken(GetCurrentProcess(),TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,&hToken))
+  if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES|TOKEN_QUERY,&hToken))
   {
-    LookupPrivilegeValue(NULL,SE_SHUTDOWN_NAME,&tkp.Privileges[0].Luid);
+    LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME,&tkp.Privileges[0].Luid);
     tkp.PrivilegeCount = 1;
     tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
-    AdjustTokenPrivileges(hToken,FALSE,&tkp,0,(PTOKEN_PRIVILEGES)NULL,0);
+    AdjustTokenPrivileges(hToken, FALSE,&tkp, 0,(PTOKEN_PRIVILEGES)NULL, 0);
   }
-  ExitWindowsEx(EWX_SHUTDOWN|EWX_FORCE|EWX_POWEROFF,SHTDN_REASON_FLAG_PLANNED);
+  ExitWindowsEx(EWX_SHUTDOWN|EWX_FORCE|EWX_POWEROFF, SHTDN_REASON_FLAG_PLANNED);
 }
 #endif
 
