@@ -1,6 +1,9 @@
 #ifndef _RAR_ENCNAME_
 #define _RAR_ENCNAME_
 
+#include <string.h>
+#include "rartypes.hpp"
+
 class EncodeFileName
 {
   private:
@@ -13,8 +16,8 @@ class EncodeFileName
     size_t DestSize;
   public:
     EncodeFileName();
-    size_t Encode(char *Name,wchar *NameW,byte *EncName);
-    void Decode(char *Name,byte *EncName,size_t EncSize,wchar *NameW,size_t MaxDecSize);
+    size_t Encode(char *Name, wchar *NameW, byte *EncName);
+    void Decode(char *Name, byte *EncName, size_t EncSize, wchar *NameW, size_t MaxDecSize);
 };
 
 #endif
