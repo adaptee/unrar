@@ -1,10 +1,13 @@
 #ifndef _RAR_CRC_
 #define _RAR_CRC_
 
+#include <string.h>
+#include "rartypes.hpp"
+
 extern uint CRCTab[256];
 
 void InitCRC();
-uint CRC(uint StartCRC,const void *Addr,size_t Size);
-ushort OldCRC(ushort StartCRC,const void *Addr,size_t Size);
+uint CRC(uint StartCRC, const void *Addr, size_t Size);
+ushort OldCRC(ushort StartCRC, const void *Addr, size_t Size);
 
 #endif
