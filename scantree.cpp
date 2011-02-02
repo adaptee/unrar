@@ -1,6 +1,24 @@
-#include "rar.hpp"
+#include <string.h>
 
-ScanTree::ScanTree(StringList *FileMasks,RECURSE_MODE Recurse,bool GetLinks,SCAN_DIRS GetDirs)
+
+#include "scantree.hpp"
+#include "file.hpp"
+#include "find.hpp"
+#include "pathfn.hpp"
+#include "match.hpp"
+#include "loclang.hpp"
+#include "resource.hpp"
+#include "strlist.hpp"
+#include "unicode.hpp"
+#include "log.hpp"
+#include "cmddata.hpp"
+#include "errhnd.hpp"
+
+//FIXME; duplicated info
+extern ErrorHandler ErrHandler;
+
+
+ScanTree::ScanTree(StringList *FileMasks, RECURSE_MODE Recurse, bool GetLinks, SCAN_DIRS GetDirs)
 {
   ScanTree::FileMasks=FileMasks;
   ScanTree::Recurse=Recurse;
@@ -12,7 +30,7 @@ ScanTree::ScanTree(StringList *FileMasks,RECURSE_MODE Recurse,bool GetLinks,SCAN
   SetAllMaskDepth=0;
   *CurMask=0;
   *CurMaskW=0;
-  memset(FindStack,0,sizeof(FindStack));
+  memset(FindStack, 0, sizeof(FindStack));
   Depth=0;
   Errors=0;
   *ErrArcName=0;
@@ -59,7 +77,7 @@ SCAN_CODE ScanTree::GetNext(FindData *FindData)
 
 bool ScanTree::GetNextMask()
 {
-  if (!FileMasks->GetString(CurMask,CurMaskW,ASIZE(CurMask)))
+  if (!FileMasks->GetString(CurMask, CurMaskW, ASIZE(CurMask)))
     return(false);
 
   if (*CurMask==0 && *CurMaskW!=0)
@@ -68,7 +86,7 @@ bool ScanTree::GetNextMask()
     // but possible if called from GUI WinRAR. We still need to have
     // ASCII mask, because we use ASCII only mask in some checks later.
     // So let's convert Unicode to ASCII.
-    WideToChar(CurMaskW,CurMask,ASIZE(CurMask));
+    WideToChar(CurMaskW, CurMask, ASIZE(CurMask));
   }
 
   CurMask[ASIZE(CurMask)-1]=0;
@@ -78,17 +96,17 @@ bool ScanTree::GetNextMask()
 #endif
 
   // We wish to scan entire disk if mask like c:\ is specified
-  // regardless of recursion mode. Use c:\*.* mask when need to scan only 
+  // regardless of recursion mode. Use c:\*.* mask when need to scan only
   // the root directory.
   ScanEntireDisk=IsDiskLetter(CurMask) && IsPathDiv(CurMask[2]) && CurMask[3]==0;
 
   char *Name=PointToName(CurMask);
   if (*Name==0)
-    strcat(CurMask,MASKALL);
+    strcat(CurMask, MASKALL);
   if (Name[0]=='.' && (Name[1]==0 || Name[1]=='.' && Name[2]==0))
   {
     AddEndSlash(CurMask);
-    strcat(CurMask,MASKALL);
+    strcat(CurMask, MASKALL);
   }
   SpecPathLength=Name-CurMask;
 
@@ -98,24 +116,24 @@ bool ScanTree::GetNextMask()
   {
     wchar *NameW=PointToName(CurMaskW);
     if (*NameW==0)
-      wcscat(CurMaskW,MASKALLW);
+      wcscat(CurMaskW, MASKALLW);
     if (NameW[0]=='.' && (NameW[1]==0 || NameW[1]=='.' && NameW[2]==0))
     {
       AddEndSlash(CurMaskW);
-      wcscat(CurMaskW,MASKALLW);
+      wcscat(CurMaskW, MASKALLW);
     }
     SpecPathLengthW=NameW-CurMaskW;
   }
   else
   {
     wchar WideMask[NM];
-    CharToWide(CurMask,WideMask);
+    CharToWide(CurMask, WideMask);
     SpecPathLengthW=PointToName(WideMask)-WideMask;
   }
   Depth=0;
 
-  strcpy(OrigCurMask,CurMask);
-  wcscpy(OrigCurMaskW,CurMaskW);
+  strcpy(OrigCurMask, CurMask);
+  wcscpy(OrigCurMaskW, CurMaskW);
 
   return(true);
 }
@@ -126,15 +144,15 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
   if (*CurMask==0)
     return(SCAN_NEXT);
   bool FastFindFile=false;
-  
+
   if (FindStack[Depth]==NULL) // No FindFile object for this depth yet.
   {
-    bool Wildcards=IsWildcard(CurMask,CurMaskW);
+    bool Wildcards=IsWildcard(CurMask, CurMaskW);
 
     // If we have a file name without wildcards, we can try to use
     // FastFind to optimize speed. For example, in Unix it results in
     // stat call instead of opendir/readdir/closedir.
-    bool FindCode=!Wildcards && FindFile::FastFind(CurMask,CurMaskW,FD,GetLinks);
+    bool FindCode=!Wildcards && FindFile::FastFind(CurMask, CurMaskW, FD, GetLinks);
 
     bool IsDir=FindCode && FD->IsDir;
 
@@ -143,7 +161,7 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
     // We do not use "*" for directories at any level or for files
     // at top level in recursion mode.
     bool SearchAll=!IsDir && (Depth>0 || Recurse==RECURSE_ALWAYS ||
-                   Wildcards && Recurse==RECURSE_WILDCARDS || 
+                   Wildcards && Recurse==RECURSE_WILDCARDS ||
                    ScanEntireDisk && Recurse!=RECURSE_DISABLE);
     if (Depth==0)
       SearchAllInRoot=SearchAll;
@@ -152,16 +170,16 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
       // Create the new FindFile object for wildcard based search.
       FindStack[Depth]=new FindFile;
       char SearchMask[NM];
-      strcpy(SearchMask,CurMask);
+      strcpy(SearchMask, CurMask);
       if (SearchAll)
-        strcpy(PointToName(SearchMask),MASKALL);
+        strcpy(PointToName(SearchMask), MASKALL);
       FindStack[Depth]->SetMask(SearchMask);
       if (*CurMaskW!=0)
       {
         wchar SearchMaskW[NM];
-        wcscpy(SearchMaskW,CurMaskW);
+        wcscpy(SearchMaskW, CurMaskW);
         if (SearchAll)
-          wcscpy(PointToName(SearchMaskW),MASKALLW);
+          wcscpy(PointToName(SearchMaskW), MASKALLW);
         FindStack[Depth]->SetMaskW(SearchMaskW);
       }
     }
@@ -184,15 +202,15 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
 
           // If we failed to find an object, but our current mask is excluded,
           // we skip this object and avoid indicating an error.
-          if (Cmd!=NULL && Cmd->ExclCheck(CurMask,false,true,true))
+          if (Cmd!=NULL && Cmd->ExclCheck(CurMask, false, true, true))
             RetCode=SCAN_NEXT;
           else
-            ErrHandler.OpenErrorMsg(ErrArcName,NULL,CurMask,CurMaskW);
+            ErrHandler.OpenErrorMsg(ErrArcName, NULL, CurMask, CurMaskW);
         }
 
-        // If we searched only for one file or directory in "fast find" 
-        // (without a wildcard) mode, let's set masks to zero, 
-        // so calling function will know that current mask is used 
+        // If we searched only for one file or directory in "fast find"
+        // (without a wildcard) mode, let's set masks to zero,
+        // so calling function will know that current mask is used
         // and next one must be read from mask list for next call.
         // It is not necessary for directories, because even in "fast find"
         // mode, directory recursing will quit by (Depth < 0) condition,
@@ -208,7 +226,7 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
     }
   }
 
-  if (!FastFindFile && !FindStack[Depth]->Next(FD,GetLinks))
+  if (!FastFindFile && !FindStack[Depth]->Next(FD, GetLinks))
   {
     // We cannot find anything more in directory either because of
     // some error or just as result of all directory entries already read.
@@ -231,13 +249,13 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
     }
 #endif
 
-    if (Error && Cmd!=NULL && Cmd->ExclCheck(CurMask,false,true,true))
+    if (Error && Cmd!=NULL && Cmd->ExclCheck(CurMask, false, true, true))
       Error=false;
 
 #ifndef SILENT
     if (Error)
     {
-      Log(NULL,St(MScanError),CurMask);
+      Log(NULL, St(MScanError), CurMask);
       ErrHandler.SysErrMsg();
     }
 #endif
@@ -261,38 +279,38 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
         Errors++;
       return(SCAN_DONE);
     }
-    char *Slash=strrchrd(CurMask,CPATHDIVIDER);
+    char *Slash=strrchrd(CurMask, CPATHDIVIDER);
     if (Slash!=NULL)
     {
       char Mask[NM];
-      strcpy(Mask,Slash);
+      strcpy(Mask, Slash);
       if (Depth<SetAllMaskDepth)
-        strcpy(Mask+1,PointToName(OrigCurMask));
+        strcpy(Mask+1, PointToName(OrigCurMask));
       *Slash=0;
-      strcpy(DirName,CurMask);
-      char *PrevSlash=strrchrd(CurMask,CPATHDIVIDER);
+      strcpy(DirName, CurMask);
+      char *PrevSlash=strrchrd(CurMask, CPATHDIVIDER);
       if (PrevSlash==NULL)
-        strcpy(CurMask,Mask+1);
+        strcpy(CurMask, Mask+1);
       else
-        strcpy(PrevSlash,Mask);
+        strcpy(PrevSlash, Mask);
     }
 
     if (*CurMaskW!=0)
     {
-      wchar *Slash=wcsrchr(CurMaskW,CPATHDIVIDER);
+      wchar *Slash=wcsrchr(CurMaskW, CPATHDIVIDER);
       if (Slash!=NULL)
       {
         wchar Mask[NM];
-        wcscpy(Mask,Slash);
+        wcscpy(Mask, Slash);
         if (Depth<SetAllMaskDepth)
-          wcscpy(Mask+1,PointToName(OrigCurMaskW));
+          wcscpy(Mask+1, PointToName(OrigCurMaskW));
         *Slash=0;
-        wcscpy(DirNameW,CurMaskW);
-        wchar *PrevSlash=wcsrchr(CurMaskW,CPATHDIVIDER);
+        wcscpy(DirNameW, CurMaskW);
+        wchar *PrevSlash=wcsrchr(CurMaskW, CPATHDIVIDER);
         if (PrevSlash==NULL)
-          wcscpy(CurMaskW,Mask+1);
+          wcscpy(CurMaskW, Mask+1);
         else
-          wcscpy(PrevSlash,Mask);
+          wcscpy(PrevSlash, Mask);
       }
 #ifndef _WIN_CE
 //      if (LowAscii(CurMaskW))
@@ -300,7 +318,7 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
 #endif
     }
     if (GetDirs==SCAN_GETDIRSTWICE &&
-        FindFile::FastFind(DirName,DirNameW,FD,GetLinks) && FD->IsDir)
+        FindFile::FastFind(DirName, DirNameW, FD, GetLinks) && FD->IsDir)
     {
       FD->Flags|=FDDF_SECONDDIR;
       return(Error ? SCAN_ERROR:SCAN_SUCCESS);
@@ -320,7 +338,7 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
 
     // Let's check if directory name is excluded, so we do not waste
     // time searching in directory, which will be excluded anyway.
-    if (Cmd!=NULL && (Cmd->ExclCheck(FD->Name,true,false,false) ||
+    if (Cmd!=NULL && (Cmd->ExclCheck(FD->Name, true, false, false) ||
         Cmd->ExclDirByAttr(FD->FileAttr)))
     {
       // If we are here in "fast find" mode, it means that entire directory
@@ -331,39 +349,39 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
 
       return(FastFindFile ? SCAN_DONE:SCAN_NEXT);
     }
-    
+
     char Mask[NM];
 
-    strcpy(Mask,FastFindFile ? MASKALL:PointToName(CurMask));
-    strcpy(CurMask,FD->Name);
+    strcpy(Mask, FastFindFile ? MASKALL:PointToName(CurMask));
+    strcpy(CurMask, FD->Name);
 
     if (strlen(CurMask)+strlen(Mask)+1>=NM || Depth>=MAXSCANDEPTH-1)
     {
 #ifndef SILENT
-      Log(NULL,"\n%s%c%s",CurMask,CPATHDIVIDER,Mask);
-      Log(NULL,St(MPathTooLong));
+      Log(NULL,"\n%s%c%s", CurMask, CPATHDIVIDER, Mask);
+      Log(NULL, St(MPathTooLong));
 #endif
       return(SCAN_ERROR);
     }
 
     AddEndSlash(CurMask);
-    strcat(CurMask,Mask);
+    strcat(CurMask, Mask);
 
     if (*CurMaskW && *FD->NameW==0)
-      CharToWide(FD->Name,FD->NameW);
+      CharToWide(FD->Name, FD->NameW);
     if (*FD->NameW!=0)
     {
       wchar Mask[NM];
       if (FastFindFile)
-        wcscpy(Mask,MASKALLW);
+        wcscpy(Mask, MASKALLW);
       else
         if (*CurMaskW)
-          wcscpy(Mask,PointToName(CurMaskW));
+          wcscpy(Mask, PointToName(CurMaskW));
         else
-          CharToWide(PointToName(CurMask),Mask);
-      wcscpy(CurMaskW,FD->NameW);
+          CharToWide(PointToName(CurMask), Mask);
+      wcscpy(CurMaskW, FD->NameW);
       AddEndSlash(CurMaskW);
-      wcscat(CurMaskW,Mask);
+      wcscat(CurMaskW, Mask);
     }
     Depth++;
 
@@ -388,7 +406,7 @@ SCAN_CODE ScanTree::FindProc(FindData *FD)
     if (FastFindFile)
       SetAllMaskDepth=Depth;
   }
-  if (!FastFindFile && !CmpName(CurMask,FD->Name,MATCH_NAMES))
+  if (!FastFindFile && !CmpName(CurMask, FD->Name, MATCH_NAMES))
     return(SCAN_NEXT);
 
   return(SCAN_SUCCESS);
