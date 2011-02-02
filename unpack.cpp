@@ -971,6 +971,7 @@ bool Unpack::ReadTables()
             i++;
         }
         else
+        {
             if (Number < 18)
             {
                 int N;
@@ -981,10 +982,11 @@ bool Unpack::ReadTables()
                 }
                 else
                 {
-                    N=(fgetbits() >> 9) + 11;
+                    N = (fgetbits() >> 9) + 11;
                     faddbits(7);
                 }
-                while (N-- > 0 && i<TableSize)
+
+                while (N-- > 0 && i < TableSize)
                 {
                     Table[i] = Table[i-1];
                     i++;
@@ -995,18 +997,21 @@ bool Unpack::ReadTables()
                 int N;
                 if (Number == 18)
                 {
-                    N=(fgetbits() >> 13) + 3;
+                    N = (fgetbits() >> 13) + 3;
                     faddbits(3);
                 }
                 else
                 {
-                    N=(fgetbits() >> 9) + 11;
+                    N = (fgetbits() >> 9) + 11;
                     faddbits(7);
                 }
                 while (N-- > 0 && i < TableSize)
                     Table[i++] = 0;
             }
+
+        }
     }
+
     TablesRead = true;
     if (InAddr > ReadTop)
         return false;
@@ -1016,6 +1021,7 @@ bool Unpack::ReadTables()
     MakeDecodeTables(&Table[NC+DC], &LDD, LDC);
     MakeDecodeTables(&Table[NC+DC+LDC], &RD, RC);
     memcpy(UnpOldTable, Table, sizeof(UnpOldTable));
+
     return true;
 }
 
