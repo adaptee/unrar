@@ -1,4 +1,8 @@
-#include "rar.hpp"
+#include <wchar.h>
+
+#include "strlist.hpp"
+#include "strfn.hpp"
+#include "unicode.hpp"
 
 StringList::StringList()
 {
@@ -18,19 +22,19 @@ void StringList::Reset()
 
 void StringList::AddString(const char *Str)
 {
-  AddString(Str,NULL);
+  AddString(Str, NULL);
 }
 
 
 void StringList::AddString(const wchar *Str)
 {
-  AddString(NULL,Str);
+  AddString(NULL, Str);
 }
 
 
 
 
-void StringList::AddString(const char *Str,const wchar *StrW)
+void StringList::AddString(const char *Str, const wchar *StrW)
 {
   if (Str==NULL)
     Str="";
@@ -39,50 +43,50 @@ void StringList::AddString(const char *Str,const wchar *StrW)
 
   size_t PrevSize=StringData.Size();
   StringData.Add(strlen(Str)+1);
-  strcpy(&StringData[PrevSize],Str);
+  strcpy(&StringData[PrevSize], Str);
 
   size_t PrevSizeW=StringDataW.Size();
   StringDataW.Add(wcslen(StrW)+1);
-  wcscpy(&StringDataW[PrevSizeW],StrW);
+  wcscpy(&StringDataW[PrevSizeW], StrW);
 
   StringsCount++;
 }
 
 
-bool StringList::GetString(char *Str,size_t MaxLength)
+bool StringList::GetString(char *Str, size_t MaxLength)
 {
-  return(GetString(Str,NULL,MaxLength));
+  return(GetString(Str, NULL, MaxLength));
 }
 
 
-bool StringList::GetString(wchar *Str,size_t MaxLength)
+bool StringList::GetString(wchar *Str, size_t MaxLength)
 {
-  return(GetString(NULL,Str,MaxLength));
+  return(GetString(NULL, Str, MaxLength));
 }
 
 
-bool StringList::GetString(char *Str,wchar *StrW,size_t MaxLength)
+bool StringList::GetString(char *Str, wchar *StrW, size_t MaxLength)
 {
   char *StrPtr;
   wchar *StrPtrW;
   if (!GetString(&StrPtr,&StrPtrW))
     return(false);
   if (Str!=NULL)
-    strncpy(Str,StrPtr,MaxLength);
+    strncpy(Str, StrPtr, MaxLength);
   if (StrW!=NULL)
-    wcsncpy(StrW,StrPtrW,MaxLength);
+    wcsncpy(StrW, StrPtrW, MaxLength);
   return(true);
 }
 
 
 #ifndef SFX_MODULE
-bool StringList::GetString(char *Str,wchar *StrW,size_t MaxLength,int StringNum)
+bool StringList::GetString(char *Str, wchar *StrW, size_t MaxLength, int StringNum)
 {
   SavePosition();
   Rewind();
   bool RetCode=true;
   while (StringNum-- >=0)
-    if (!GetString(Str,StrW,MaxLength))
+    if (!GetString(Str, StrW, MaxLength))
     {
       RetCode=false;
       break;
@@ -96,7 +100,7 @@ bool StringList::GetString(char *Str,wchar *StrW,size_t MaxLength,int StringNum)
 char* StringList::GetString()
 {
   char *Str;
-  GetString(&Str,NULL);
+  GetString(&Str, NULL);
   return(Str);
 }
 
@@ -109,7 +113,7 @@ wchar* StringList::GetStringW()
 }
 
 
-bool StringList::GetString(char **Str,wchar **StrW)
+bool StringList::GetString(char **Str, wchar **StrW)
 {
   // First check would be enough, because both buffers grow synchronously,
   // but we check both for extra fail proof.
@@ -124,7 +128,7 @@ bool StringList::GetString(char **Str,wchar **StrW)
   }
 
   // We move ASCII and Unicode buffer pointers synchronously.
-  
+
   char *CurStr=&StringData[CurPos];
   CurPos+=strlen(CurStr)+1;
   if (Str!=NULL)
@@ -154,7 +158,7 @@ size_t StringList::GetCharCount()
 
 
 #ifndef SFX_MODULE
-bool StringList::Search(char *Str,wchar *StrW,bool CaseSensitive)
+bool StringList::Search(char *Str, wchar *StrW, bool CaseSensitive)
 {
   SavePosition();
   Rewind();
@@ -164,10 +168,10 @@ bool StringList::Search(char *Str,wchar *StrW,bool CaseSensitive)
   while (GetString(&CurStr,&CurStrW))
   {
     if (Str!=NULL && CurStr!=NULL)
-      if ((CaseSensitive ? strcmp(Str,CurStr):stricomp(Str,CurStr))!=0)
+      if ((CaseSensitive ? strcmp(Str, CurStr):stricomp(Str, CurStr))!=0)
         continue;
     if (StrW!=NULL && CurStrW!=NULL)
-      if ((CaseSensitive ? wcscmp(StrW,CurStrW):wcsicomp(StrW,CurStrW))!=0)
+      if ((CaseSensitive ? wcscmp(StrW, CurStrW):wcsicomp(StrW, CurStrW))!=0)
         continue;
     Found=true;
     break;
