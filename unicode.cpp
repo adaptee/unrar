@@ -1,4 +1,13 @@
-#include "rar.hpp"
+#include <stdlib.h>
+
+#include "unicode.hpp"
+
+#include "raros.hpp"
+#include "os.hpp"
+#include "rardefs.hpp"
+#include "strfn.hpp"
+#include "pathfn.hpp"
+
 
 bool WideToChar(const wchar *Src, char *Dest, size_t DestSize)
 {

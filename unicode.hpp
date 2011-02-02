@@ -30,6 +30,10 @@
 #define sprintfw swprintf
 #endif
 
+#include <string.h>
+
+#include "rartypes.hpp"
+
 bool WideToChar(const wchar *Src, char *Dest, size_t DestSize=0x1000000);
 bool CharToWide(const char *Src, wchar *Dest, size_t DestSize=0x1000000);
 byte* WideToRaw(const wchar *Src, byte *Dest, size_t SrcSize=0x1000000);
