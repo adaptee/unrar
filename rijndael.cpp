@@ -5,7 +5,6 @@
  * Dynamic tables generation is based on the Brian Gladman work:          *
  * http://fp.gladman.plus.com/cryptography_technology/rijndael            *
  **************************************************************************/
-//#include "rar.hpp"
 #include "rijndael.hpp"
 
 const int uKeyLenInBytes=16, m_uRounds=10;
