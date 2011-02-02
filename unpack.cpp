@@ -1160,7 +1160,7 @@ void Unpack::MakeDecodeTables(byte *LengthTable, DecodeTable *Dec, uint Size)
             Dec->QuickBits = MAX_QUICK_DECODE_BITS;
             break;
         default:
-            Dec->QuickBits = MAX_QUICK_DECODE_BITS-3;
+            Dec->QuickBits = MAX_QUICK_DECODE_BITS - 3;
             break;
     }
 
@@ -1176,13 +1176,14 @@ void Unpack::MakeDecodeTables(byte *LengthTable, DecodeTable *Dec, uint Size)
     for (uint Code=0;Code<QuickDataSize;Code++)
     {
         // Left align the current code, so it will be in usual bit field format.
-        uint BitField = Code<<(16 - Dec->QuickBits);
+        uint BitField = Code << (16 - Dec->QuickBits);
 
         // Prepare the table for quick decoding of bit lengths.
 
         // Find the upper limit for current bit field and adjust the bit length
         // accordingly if necessary.
-        while (BitField>=Dec->DecodeLen[CurBitLength] && CurBitLength<ASIZE(Dec->DecodeLen))
+        while (BitField >= Dec->DecodeLen[CurBitLength] &&
+               CurBitLength < ASIZE(Dec->DecodeLen))
             CurBitLength++;
 
         // Translation of right aligned bit string to bit length.
@@ -1208,6 +1209,8 @@ void Unpack::MakeDecodeTables(byte *LengthTable, DecodeTable *Dec, uint Size)
             Dec->QuickNum[Code] = Dec->DecodeNum[Pos];
         }
         else
+        {
             Dec->QuickNum[Code] = 0;
+        }
     }
 }
