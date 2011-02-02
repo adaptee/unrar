@@ -1,4 +1,5 @@
-#include "rar.hpp"
+#include "rawread.hpp"
+#include "crypt.hpp"
 
 RawRead::RawRead(File *SrcFile)
 {
@@ -22,8 +23,8 @@ void RawRead::Read(size_t Size)
     {
       size_t AlignedReadSize=SizeToRead+((~SizeToRead+1)&0xf);
       Data.Add(AlignedReadSize);
-      size_t ReadSize=SrcFile->Read(&Data[CurSize],AlignedReadSize);
-      Crypt->DecryptBlock(&Data[CurSize],AlignedReadSize);
+      size_t ReadSize=SrcFile->Read(&Data[CurSize], AlignedReadSize);
+      Crypt->DecryptBlock(&Data[CurSize], AlignedReadSize);
       DataSize+=ReadSize==0 ? 0:Size;
     }
     else
@@ -34,17 +35,17 @@ void RawRead::Read(size_t Size)
     if (Size!=0)
     {
       Data.Add(Size);
-      DataSize+=SrcFile->Read(&Data[DataSize],Size);
+      DataSize+=SrcFile->Read(&Data[DataSize], Size);
     }
 }
 
 
-void RawRead::Read(byte *SrcData,size_t Size)
+void RawRead::Read(byte *SrcData, size_t Size)
 {
   if (Size!=0)
   {
     Data.Add(Size);
-    memcpy(&Data[DataSize],SrcData,Size);
+    memcpy(&Data[DataSize], SrcData, Size);
     DataSize+=Size;
   }
 }
@@ -89,34 +90,34 @@ void RawRead::Get(uint &Field)
 
 void RawRead::Get8(int64 &Field)
 {
-  uint Low,High;
+  uint Low, High;
   Get(Low);
   Get(High);
-  Field=INT32TO64(High,Low);
+  Field=INT32TO64(High, Low);
 }
 
 
-void RawRead::Get(byte *Field,size_t Size)
+void RawRead::Get(byte *Field, size_t Size)
 {
   if (ReadPos+Size-1<DataSize)
   {
-    memcpy(Field,&Data[ReadPos],Size);
+    memcpy(Field,&Data[ReadPos], Size);
     ReadPos+=Size;
   }
   else
-    memset(Field,0,Size);
+    memset(Field, 0, Size);
 }
 
 
-void RawRead::Get(wchar *Field,size_t Size)
+void RawRead::Get(wchar *Field, size_t Size)
 {
   if (ReadPos+2*Size-1<DataSize)
   {
-    RawToWide(&Data[ReadPos],Field,Size);
+    RawToWide(&Data[ReadPos], Field, Size);
     ReadPos+=sizeof(wchar)*Size;
   }
   else
-    memset(Field,0,sizeof(wchar)*Size);
+    memset(Field, 0, sizeof(wchar)*Size);
 }
 
 
