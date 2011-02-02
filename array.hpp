@@ -1,9 +1,13 @@
 #ifndef _RAR_ARRAY_
 #define _RAR_ARRAY_
 
+#include <string.h>
+#include <stdlib.h>
+
+#include "rartypes.hpp"
 #include "rardefs.hpp"
 
-extern ErrorHandler ErrHandler;
+//extern ErrorHandler ErrHandler;
 
 template <class T> class Array
 {
@@ -43,8 +47,8 @@ template <class T> Array<T>::Array()
 template <class T> Array<T>::Array(size_t Size)
 {
   Buffer=(T *)malloc(sizeof(T)*Size);
-  if (Buffer==NULL && Size!=0)
-    ErrHandler.MemoryError();
+  //if (Buffer==NULL && Size!=0)
+    //ErrHandler.MemoryError();
 
   AllocSize=BufSize=Size;
 }
@@ -78,8 +82,8 @@ template <class T> void Array<T>::Add(size_t Items)
     size_t NewSize=Max(BufSize, Suggested);
 
     Buffer=(T *)realloc(Buffer, NewSize*sizeof(T));
-    if (Buffer==NULL)
-      ErrHandler.MemoryError();
+    //if (Buffer==NULL)
+      //ErrHandler.MemoryError();
     AllocSize=NewSize;
   }
 }
