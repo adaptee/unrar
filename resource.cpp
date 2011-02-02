@@ -1,5 +1,6 @@
-#include "rar.hpp"
-
+#include "resource.hpp"
+#include "rardefs.hpp"
+#include "unicode.hpp"
 
 
 #ifndef RARDLL
@@ -19,7 +20,7 @@ const wchar *StW(MSGID StringId)
     StrNum=0;
   wchar *Str=StrTable[StrNum];
   *Str=0;
-  CharToWide(StringId,Str,ASIZE(StrTable[0]));
+  CharToWide(StringId, Str, ASIZE(StrTable[0]));
   return(Str);
 }
 #endif

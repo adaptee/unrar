@@ -1,6 +1,10 @@
 #ifndef _RAR_RESOURCE_
 #define _RAR_RESOURCE_
 
+#include "raros.hpp"
+#include "os.hpp"
+#include "rartypes.hpp"
+
 #ifdef RARDLL
 #define St(x)  ( "")
 #define StW(x) (L"")
