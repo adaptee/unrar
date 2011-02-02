@@ -1,20 +1,34 @@
-#include "rar.hpp"
+#include "filefn.hpp"
 
-MKDIR_CODE MakeDir(const char *Name,const wchar *NameW,bool SetAttr,uint Attr)
+#include "timefn.hpp"
+#include "pathfn.hpp"
+#include "smallfn.hpp"
+#include "file.hpp"
+#include "savepos.hpp"
+#include "find.hpp"
+#include "unicode.hpp"
+#include "loclang.hpp"
+#include "resource.hpp"
+#include "consio.hpp"
+#include "crc.hpp"
+#include "system.hpp"
+
+
+MKDIR_CODE MakeDir(const char *Name, const wchar *NameW, bool SetAttr, uint Attr)
 {
 #ifdef _WIN_ALL
   BOOL RetCode;
     if (WinNT() && NameW!=NULL && *NameW!=0)
-      RetCode=CreateDirectoryW(NameW,NULL);
+      RetCode=CreateDirectoryW(NameW, NULL);
     else
       if (Name!=NULL)
-        RetCode=CreateDirectoryA(Name,NULL);
+        RetCode=CreateDirectoryA(Name, NULL);
       else
         return(MKDIR_BADPATH);
   if (RetCode!=0) // Non-zero return code means success for CreateDirectory.
   {
     if (SetAttr)
-      SetFileAttr(Name,NameW,Attr);
+      SetFileAttr(Name, NameW, Attr);
     return(MKDIR_SUCCESS);
   }
   int ErrCode=GetLastError();
@@ -36,7 +50,7 @@ MKDIR_CODE MakeDir(const char *Name,const wchar *NameW,bool SetAttr,uint Attr)
   #endif
     {
       if (SetAttr)
-        SetFileAttr(Name,NameW,Attr);
+        SetFileAttr(Name, NameW, Attr);
       return(MKDIR_SUCCESS);
     }
     return(errno==ENOENT ? MKDIR_BADPATH:MKDIR_ERROR);
@@ -44,7 +58,7 @@ MKDIR_CODE MakeDir(const char *Name,const wchar *NameW,bool SetAttr,uint Attr)
 
 #ifdef _UNIX
   mode_t uattr=SetAttr ? (mode_t)Attr:0777;
-  int ErrCode=mkdir(Name,uattr);
+  int ErrCode=mkdir(Name, uattr);
   if (ErrCode==-1)
     return(errno==ENOENT ? MKDIR_BADPATH:MKDIR_ERROR);
   return(MKDIR_SUCCESS);
@@ -52,7 +66,7 @@ MKDIR_CODE MakeDir(const char *Name,const wchar *NameW,bool SetAttr,uint Attr)
 }
 
 
-bool CreatePath(const char *Path,bool SkipLastName)
+bool CreatePath(const char *Path, bool SkipLastName)
 {
   if (Path==NULL || *Path==0)
     return(false);
@@ -62,7 +76,7 @@ bool CreatePath(const char *Path,bool SkipLastName)
 #else
   uint DirAttr=0777;
 #endif
-  
+
   bool Success=true;
 
   for (const char *s=Path;*s!=0;s=charnext(s))
@@ -73,14 +87,14 @@ bool CreatePath(const char *Path,bool SkipLastName)
     if (*s==CPATHDIVIDER)
     {
       char DirName[NM];
-      strncpy(DirName,Path,s-Path);
+      strncpy(DirName, Path, s-Path);
       DirName[s-Path]=0;
 
-      if (MakeDir(DirName,NULL,true,DirAttr)==MKDIR_SUCCESS)
+      if (MakeDir(DirName, NULL, true, DirAttr)==MKDIR_SUCCESS)
       {
 #ifndef GUI
-        mprintf(St(MCreatDir),DirName);
-        mprintf(" %s",St(MOk));
+        mprintf(St(MCreatDir), DirName);
+        mprintf(" %s", St(MOk));
 #endif
       }
       else
@@ -89,13 +103,13 @@ bool CreatePath(const char *Path,bool SkipLastName)
   }
   if (!SkipLastName)
     if (!IsPathDiv(*PointToLastChar(Path)))
-      if (MakeDir(Path,NULL,true,DirAttr)!=MKDIR_SUCCESS)
+      if (MakeDir(Path, NULL, true, DirAttr)!=MKDIR_SUCCESS)
         Success=false;
   return(Success);
 }
 
 
-bool CreatePath(const wchar *Path,bool SkipLastName)
+bool CreatePath(const wchar *Path, bool SkipLastName)
 {
   if (Path==NULL || *Path==0)
     return(false);
@@ -105,7 +119,7 @@ bool CreatePath(const wchar *Path,bool SkipLastName)
 #else
   uint DirAttr=0777;
 #endif
-  
+
   bool Success=true;
 
   for (const wchar *s=Path;*s!=0;s++)
@@ -116,17 +130,17 @@ bool CreatePath(const wchar *Path,bool SkipLastName)
     if (*s==CPATHDIVIDER)
     {
       wchar DirName[NM];
-      wcsncpy(DirName,Path,s-Path);
+      wcsncpy(DirName, Path, s-Path);
       DirName[s-Path]=0;
 
-      if (MakeDir(NULL,DirName,true,DirAttr)==MKDIR_SUCCESS)
+      if (MakeDir(NULL, DirName, true, DirAttr)==MKDIR_SUCCESS)
       {
 #ifndef GUI
         char DirNameA[NM];
-        WideToChar(DirName,DirNameA,ASIZE(DirNameA));
+        WideToChar(DirName, DirNameA, ASIZE(DirNameA));
         DirNameA[ASIZE(DirNameA)-1]=0;
-        mprintf(St(MCreatDir),DirNameA);
-        mprintf(" %s",St(MOk));
+        mprintf(St(MCreatDir), DirNameA);
+        mprintf(" %s", St(MOk));
 #endif
       }
       else
@@ -135,27 +149,27 @@ bool CreatePath(const wchar *Path,bool SkipLastName)
   }
   if (!SkipLastName)
     if (!IsPathDiv(*PointToLastChar(Path)))
-      if (MakeDir(NULL,Path,true,DirAttr)!=MKDIR_SUCCESS)
+      if (MakeDir(NULL, Path, true, DirAttr)!=MKDIR_SUCCESS)
         Success=false;
   return(Success);
 }
 
 
-bool CreatePath(const char *Path,const wchar *PathW,bool SkipLastName)
+bool CreatePath(const char *Path, const wchar *PathW, bool SkipLastName)
 {
 #ifdef _WIN_ALL
   // If we are in Windows, let's try Unicode path first. In Unix we do not
   // need it (Unix MakeDir will fails with Unicode only name).
   if (PathW!=NULL && *PathW!=0)
-    return(CreatePath(PathW,SkipLastName));
+    return(CreatePath(PathW, SkipLastName));
 #endif
   if (Path!=NULL && *Path!=0)
-    return(CreatePath(Path,SkipLastName));
+    return(CreatePath(Path, SkipLastName));
   return(false);
 }
 
 
-void SetDirTime(const char *Name,const wchar *NameW,RarTime *ftm,RarTime *ftc,RarTime *fta)
+void SetDirTime(const char *Name, const wchar *NameW, RarTime *ftm, RarTime *ftc, RarTime *fta)
 {
 #ifdef _WIN_ALL
   if (!WinNT())
@@ -165,31 +179,31 @@ void SetDirTime(const char *Name,const wchar *NameW,RarTime *ftm,RarTime *ftc,Ra
   bool sc=ftc!=NULL && ftc->IsSet();
   bool sa=fta!=NULL && fta->IsSet();
 
-  unsigned int DirAttr=GetFileAttr(Name,NameW);
+  unsigned int DirAttr=GetFileAttr(Name, NameW);
   bool ResetAttr=(DirAttr!=0xffffffff && (DirAttr & FA_RDONLY)!=0);
   if (ResetAttr)
-    SetFileAttr(Name,NameW,0);
+    SetFileAttr(Name, NameW, 0);
 
   wchar DirNameW[NM];
-  GetWideName(Name,NameW,DirNameW,ASIZE(DirNameW));
-  HANDLE hFile=CreateFileW(DirNameW,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,
-                          NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
+  GetWideName(Name, NameW, DirNameW, ASIZE(DirNameW));
+  HANDLE hFile=CreateFileW(DirNameW, GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE,
+                          NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hFile==INVALID_HANDLE_VALUE)
     return;
-  FILETIME fm,fc,fa;
+  FILETIME fm, fc, fa;
   if (sm)
     ftm->GetWin32(&fm);
   if (sc)
     ftc->GetWin32(&fc);
   if (sa)
     fta->GetWin32(&fa);
-  SetFileTime(hFile,sc ? &fc:NULL,sa ? &fa:NULL,sm ? &fm:NULL);
+  SetFileTime(hFile, sc ? &fc:NULL, sa ? &fa:NULL, sm ? &fm:NULL);
   CloseHandle(hFile);
   if (ResetAttr)
-    SetFileAttr(Name,NameW,DirAttr);
+    SetFileAttr(Name, NameW, DirAttr);
 #endif
 #if defined(_UNIX) || defined(_EMX)
-  File::SetCloseFileTimeByName(Name,ftm,fta);
+  File::SetCloseFileTimeByName(Name, ftm, fta);
 #endif
 }
 
@@ -198,7 +212,7 @@ bool IsRemovable(const char *Name)
 {
 #ifdef _WIN_ALL
   char Root[NM];
-  GetPathRoot(Name,Root);
+  GetPathRoot(Name, Root);
   int Type=GetDriveTypeA(*Root!=0 ? Root:NULL);
   return(Type==DRIVE_REMOVABLE || Type==DRIVE_CDROM);
 #elif defined(_EMX)
@@ -217,10 +231,10 @@ int64 GetFreeDisk(const char *Name)
 {
 #ifdef _WIN_ALL
   char Root[NM];
-  GetPathRoot(Name,Root);
+  GetPathRoot(Name, Root);
 
   typedef BOOL (WINAPI *GETDISKFREESPACEEX)(
-    LPCSTR,PULARGE_INTEGER,PULARGE_INTEGER,PULARGE_INTEGER
+    LPCSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER
    );
   static GETDISKFREESPACEEX pGetDiskFreeSpaceEx=NULL;
 
@@ -232,16 +246,16 @@ int64 GetFreeDisk(const char *Name)
   }
   if (pGetDiskFreeSpaceEx!=NULL)
   {
-    GetFilePath(Name,Root,ASIZE(Root));
-    ULARGE_INTEGER uiTotalSize,uiTotalFree,uiUserFree;
+    GetFilePath(Name, Root, ASIZE(Root));
+    ULARGE_INTEGER uiTotalSize, uiTotalFree, uiUserFree;
     uiUserFree.u.LowPart=uiUserFree.u.HighPart=0;
     if (pGetDiskFreeSpaceEx(*Root ? Root:NULL,&uiUserFree,&uiTotalSize,&uiTotalFree) &&
         uiUserFree.u.HighPart<=uiTotalFree.u.HighPart)
-      return(INT32TO64(uiUserFree.u.HighPart,uiUserFree.u.LowPart));
+      return(INT32TO64(uiUserFree.u.HighPart, uiUserFree.u.LowPart));
   }
 
   // We are here if we failed to load GetDiskFreeSpaceExA.
-  DWORD SectorsPerCluster,BytesPerSector,FreeClusters,TotalClusters;
+  DWORD SectorsPerCluster, BytesPerSector, FreeClusters, TotalClusters;
   if (!GetDiskFreeSpaceA(*Root ? Root:NULL,&SectorsPerCluster,&BytesPerSector,&FreeClusters,&TotalClusters))
     return(1457664);
   int64 FreeSize=SectorsPerCluster*BytesPerSector;
@@ -249,7 +263,7 @@ int64 GetFreeDisk(const char *Name)
   return(FreeSize);
 #elif defined(_BEOS)
   char Root[NM];
-  GetFilePath(Name,Root,ASIZE(Root));
+  GetFilePath(Name, Root, ASIZE(Root));
   dev_t Dev=dev_for_path(*Root ? Root:".");
   if (Dev<0)
     return(1457664);
@@ -267,7 +281,7 @@ int64 GetFreeDisk(const char *Name)
   if (_osmode == OS2_MODE)
   {
     FSALLOCATE fsa;
-    if (DosQueryFSInfo(Drive,1,&fsa,sizeof(fsa))!=0)
+    if (DosQueryFSInfo(Drive, 1,&fsa, sizeof(fsa))!=0)
       return(1457664);
     int64 FreeSize=fsa.cSectorUnit*fsa.cbSector;
     FreeSize=FreeSize*fsa.cUnitAvail;
@@ -276,8 +290,8 @@ int64 GetFreeDisk(const char *Name)
   else
 #endif
   {
-    union REGS regs,outregs;
-    memset(&regs,0,sizeof(regs));
+    union REGS regs, outregs;
+    memset(&regs, 0, sizeof(regs));
     regs.h.ah=0x36;
     regs.h.dl=Drive;
 #ifdef _DJGPP
@@ -302,7 +316,7 @@ int64 GetFreeDisk(const char *Name)
 
 
 
-bool FileExist(const char *Name,const wchar *NameW)
+bool FileExist(const char *Name, const wchar *NameW)
 {
 #ifdef _WIN_ALL
     if (WinNT() && NameW!=NULL && *NameW!=0)
@@ -310,23 +324,23 @@ bool FileExist(const char *Name,const wchar *NameW)
     else
       return(Name!=NULL && GetFileAttributesA(Name)!=0xffffffff);
 #elif defined(ENABLE_ACCESS)
-  return(access(Name,0)==0);
+  return(access(Name, 0)==0);
 #else
   FindData FD;
-  return(FindFile::FastFind(Name,NameW,&FD));
+  return(FindFile::FastFind(Name, NameW,&FD));
 #endif
 }
 
 
 bool FileExist(const wchar *Name)
 {
-  return FileExist(NULL,Name);
+  return FileExist(NULL, Name);
 }
- 
 
-bool WildFileExist(const char *Name,const wchar *NameW)
+
+bool WildFileExist(const char *Name, const wchar *NameW)
 {
-  if (IsWildcard(Name,NameW))
+  if (IsWildcard(Name, NameW))
   {
     FindFile Find;
     Find.SetMask(Name);
@@ -334,7 +348,7 @@ bool WildFileExist(const char *Name,const wchar *NameW)
     FindData fd;
     return(Find.Next(&fd));
   }
-  return(FileExist(Name,NameW));
+  return(FileExist(Name, NameW));
 }
 
 
@@ -392,19 +406,19 @@ bool IsDeleteAllowed(uint FileAttr)
 }
 
 
-void PrepareToDelete(const char *Name,const wchar *NameW)
+void PrepareToDelete(const char *Name, const wchar *NameW)
 {
 #if defined(_WIN_ALL) || defined(_EMX)
-  SetFileAttr(Name,NameW,0);
+  SetFileAttr(Name, NameW, 0);
 #endif
 #ifdef _UNIX
   if (Name!=NULL)
-    chmod(Name,S_IRUSR|S_IWUSR|S_IXUSR);
+    chmod(Name, S_IRUSR|S_IWUSR|S_IXUSR);
 #endif
 }
 
 
-uint GetFileAttr(const char *Name,const wchar *NameW)
+uint GetFileAttr(const char *Name, const wchar *NameW)
 {
 #ifdef _WIN_ALL
     if (WinNT() && NameW!=NULL && *NameW!=0)
@@ -412,7 +426,7 @@ uint GetFileAttr(const char *Name,const wchar *NameW)
     else
       return(GetFileAttributesA(Name));
 #elif defined(_DJGPP)
-  return(_chmod(Name,0));
+  return(_chmod(Name, 0));
 #else
   struct stat st;
   if (stat(Name,&st)!=0)
@@ -426,21 +440,21 @@ uint GetFileAttr(const char *Name,const wchar *NameW)
 }
 
 
-bool SetFileAttr(const char *Name,const wchar *NameW,uint Attr)
+bool SetFileAttr(const char *Name, const wchar *NameW, uint Attr)
 {
   bool Success;
 #ifdef _WIN_ALL
     if (WinNT() && NameW!=NULL && *NameW!=0)
-      Success=SetFileAttributesW(NameW,Attr)!=0;
+      Success=SetFileAttributesW(NameW, Attr)!=0;
     else
       if (Name!=NULL)
-        Success=SetFileAttributesA(Name,Attr)!=0;
+        Success=SetFileAttributesA(Name, Attr)!=0;
       else
         Success=false;
 #elif defined(_DJGPP)
-  Success=_chmod(Name,1,Attr)!=-1;
+  Success=_chmod(Name, 1, Attr)!=-1;
 #elif defined(_EMX)
-  Success=__chmod(Name,1,Attr)!=-1;
+  Success=__chmod(Name, 1, Attr)!=-1;
 #elif defined(_UNIX)
   Success=chmod(Name,(mode_t)Attr)==0;
 #else
@@ -480,9 +494,9 @@ wchar *MkTemp(wchar *Name)
   uint Random=clock();
   for (uint Attempt=0;;Attempt++)
   {
-    sprintfw(Name+Length-6,7,L"%06u",(Random+Attempt)%1000000);
+    sprintfw(Name+Length-6, 7, L"%06u",(Random+Attempt)%1000000);
     Name[Length-4]='.';
-    if (!FileExist(NULL,Name))
+    if (!FileExist(NULL, Name))
       break;
     if (Attempt==1000)
       return(NULL);
@@ -493,7 +507,7 @@ wchar *MkTemp(wchar *Name)
 
 
 #ifndef SFX_MODULE
-uint CalcFileCRC(File *SrcFile,int64 Size,CALCCRC_SHOWMODE ShowMode)
+uint CalcFileCRC(File *SrcFile, int64 Size, CALCCRC_SHOWMODE ShowMode)
 {
   SaveFilePos SavePos(*SrcFile);
   const size_t BufSize=0x10000;
@@ -511,15 +525,15 @@ uint CalcFileCRC(File *SrcFile,int64 Size,CALCCRC_SHOWMODE ShowMode)
 
 #endif
 
-  SrcFile->Seek(0,SEEK_SET);
+  SrcFile->Seek(0, SEEK_SET);
   while (true)
   {
     size_t SizeToRead;
     if (Size==INT64NDF)   // If we process the entire file.
       SizeToRead=BufSize; // Then always attempt to read the entire buffer.
     else
-      SizeToRead=(size_t)Min((int64)BufSize,Size);
-    int ReadSize=SrcFile->Read(&Data[0],SizeToRead);
+      SizeToRead=(size_t)Min((int64)BufSize, Size);
+    int ReadSize=SrcFile->Read(&Data[0], SizeToRead);
     if (ReadSize==0)
       break;
 
@@ -528,11 +542,11 @@ uint CalcFileCRC(File *SrcFile,int64 Size,CALCCRC_SHOWMODE ShowMode)
     {
 #if !defined(SILENT) && !defined(_WIN_CE)
       if (ShowMode==CALCCRC_SHOWALL)
-        mprintf("\b\b\b\b%3d%%",ToPercent(BlockCount*int64(BufSize),FileLength));
+        mprintf("\b\b\b\b%3d%%", ToPercent(BlockCount*int64(BufSize), FileLength));
 #endif
       Wait();
     }
-    DataCRC=CRC(DataCRC,&Data[0],ReadSize);
+    DataCRC=CRC(DataCRC,&Data[0], ReadSize);
     if (Size!=INT64NDF)
       Size-=ReadSize;
   }
@@ -545,21 +559,21 @@ uint CalcFileCRC(File *SrcFile,int64 Size,CALCCRC_SHOWMODE ShowMode)
 #endif
 
 
-bool RenameFile(const char *SrcName,const wchar *SrcNameW,const char *DestName,const wchar *DestNameW)
+bool RenameFile(const char *SrcName, const wchar *SrcNameW, const char *DestName, const wchar *DestNameW)
 {
-  return(rename(SrcName,DestName)==0);
+  return(rename(SrcName, DestName)==0);
 }
 
 
 bool DelFile(const char *Name)
 {
-  return(DelFile(Name,NULL));
+  return(DelFile(Name, NULL));
 }
 
 
 
 
-bool DelFile(const char *Name,const wchar *NameW)
+bool DelFile(const char *Name, const wchar *NameW)
 {
   return(Name!=NULL && remove(Name)==0);
 }
@@ -570,19 +584,19 @@ bool DelFile(const char *Name,const wchar *NameW)
 
 
 #if defined(_WIN_ALL) && !defined(_WIN_CE) && !defined(SFX_MODULE)
-bool SetFileCompression(char *Name,wchar *NameW,bool State)
+bool SetFileCompression(char *Name, wchar *NameW, bool State)
 {
   wchar FileNameW[NM];
-  GetWideName(Name,NameW,FileNameW,ASIZE(FileNameW));
-  HANDLE hFile=CreateFileW(FileNameW,FILE_READ_DATA|FILE_WRITE_DATA,
-                 FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,
-                 FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_SEQUENTIAL_SCAN,NULL);
+  GetWideName(Name, NameW, FileNameW, ASIZE(FileNameW));
+  HANDLE hFile=CreateFileW(FileNameW, FILE_READ_DATA|FILE_WRITE_DATA,
+                 FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                 FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_SEQUENTIAL_SCAN, NULL);
   if (hFile==INVALID_HANDLE_VALUE)
     return(false);
   SHORT NewState=State ? COMPRESSION_FORMAT_DEFAULT:COMPRESSION_FORMAT_NONE;
   DWORD Result;
-  int RetCode=DeviceIoControl(hFile,FSCTL_SET_COMPRESSION,&NewState,
-                              sizeof(NewState),NULL,0,&Result,NULL);
+  int RetCode=DeviceIoControl(hFile, FSCTL_SET_COMPRESSION,&NewState,
+                              sizeof(NewState), NULL, 0,&Result, NULL);
   CloseHandle(hFile);
   return(RetCode!=0);
 }

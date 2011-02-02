@@ -1,7 +1,12 @@
 #ifndef _RAR_FILEFN_
 #define _RAR_FILEFN_
 
+#include <stddef.h>
+#include "rartypes.hpp"
+
+
 class File;
+class RarTime;
 
 enum MKDIR_CODE {MKDIR_SUCCESS, MKDIR_ERROR, MKDIR_BADPATH};
 
