@@ -340,7 +340,9 @@ void Unpack::Unpack29(bool Solid)
 
         if (Number >= 271)
         {
-            int Length = LDecode[Number-=271] + 3;
+            Number -= 271;
+            int Length = LDecode[Number] + 3;
+
             if ((Bits=LBits[Number]) > 0)
             {
                 Length += ( getbits() >> (16-Bits) );
