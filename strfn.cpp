@@ -1,4 +1,3 @@
-//#include "rar.hpp"
 #include "strfn.hpp"
 #include "rardefs.hpp"
 #include "unicode.hpp"
