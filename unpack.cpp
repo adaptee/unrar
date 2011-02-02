@@ -360,6 +360,7 @@ void Unpack::Unpack29(bool Solid)
                         Distance += ((getbits()>>(20-Bits))<<4);
                         addbits(Bits-4);
                     }
+
                     if (LowDistRepCount > 0)
                     {
                         LowDistRepCount--;
@@ -379,7 +380,7 @@ void Unpack::Unpack29(bool Solid)
                             PrevLowDist = LowDist;
                         }
                     }
-                }
+                } // end of if (DistNumber > 9)
                 else
                 {
                     Distance += getbits() >> (16-Bits);
@@ -522,7 +523,7 @@ bool Unpack::ReadVMCodePPM()
     if ((int)FirstByte == -1)
         return false;
 
-    int Length = (FirstByte & 7)+1;
+    int Length = (FirstByte & 7) + 1;
     if (Length == 7)
     {
         int B1 = SafePPMDecodeChar();
@@ -532,6 +533,7 @@ bool Unpack::ReadVMCodePPM()
         Length = B1 + 7;
     }
     else
+    {
         if (Length == 8)
         {
             int B1 = SafePPMDecodeChar();
@@ -542,6 +544,8 @@ bool Unpack::ReadVMCodePPM()
                 return false;
             Length = B1 * 256 + B2;
         }
+    }
+
     Array<byte> VMCode(Length);
     for (int i=0;i<Length;i++)
     {
@@ -551,7 +555,7 @@ bool Unpack::ReadVMCodePPM()
         VMCode[i] = Ch;
     }
 
-    return AddVMCode(FirstByte,&VMCode[0], Length);
+    return AddVMCode(FirstByte, &VMCode[0], Length);
 }
 
 
@@ -578,6 +582,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
 
     if (FiltPos > Filters.Size() || FiltPos > OldFilterLengths.Size())
         return false;
+
     LastFilter = FiltPos;
     bool NewFilter = (FiltPos == Filters.Size());
 
