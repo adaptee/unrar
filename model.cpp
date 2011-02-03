@@ -15,7 +15,7 @@
 #include "unpack.hpp"
 
 
-inline PPM_CONTEXT* PPM_CONTEXT::createChild(ModelPPM *Model, STATE* pStats,
+PPM_CONTEXT* PPM_CONTEXT::createChild(ModelPPM *Model, STATE* pStats,
                                              STATE& FirstState)
 {
   PPM_CONTEXT* pc = (PPM_CONTEXT*) Model->SubAlloc.AllocContext();
@@ -167,7 +167,7 @@ void PPM_CONTEXT::rescale(ModelPPM *Model)
 }
 
 
-inline PPM_CONTEXT* ModelPPM::CreateSuccessors(bool Skip, STATE* p1)
+PPM_CONTEXT* ModelPPM::CreateSuccessors(bool Skip, STATE* p1)
 {
 #ifdef __ICL
   static
@@ -238,7 +238,7 @@ NO_LOOP:
 }
 
 
-inline void ModelPPM::UpdateModel()
+void ModelPPM::UpdateModel()
 {
   STATE fs = *FoundState, *p = NULL;
   PPM_CONTEXT *pc, *Successor;
@@ -356,7 +356,7 @@ static const byte ExpEscape[16]={ 25, 14, 9, 7, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2,
 
 
 
-inline void PPM_CONTEXT::decodeBinSymbol(ModelPPM *Model)
+void PPM_CONTEXT::decodeBinSymbol(ModelPPM *Model)
 {
   STATE& rs=OneState;
   Model->HiBitsFlag=Model->HB2Flag[Model->FoundState->Symbol];
@@ -388,7 +388,7 @@ inline void PPM_CONTEXT::decodeBinSymbol(ModelPPM *Model)
 }
 
 
-inline void PPM_CONTEXT::update1(ModelPPM *Model, STATE* p)
+void PPM_CONTEXT::update1(ModelPPM *Model, STATE* p)
 {
   (Model->FoundState=p)->Freq += 4;
   U.SummFreq += 4;
@@ -404,7 +404,7 @@ inline void PPM_CONTEXT::update1(ModelPPM *Model, STATE* p)
 
 
 
-inline bool PPM_CONTEXT::decodeSymbol1(ModelPPM *Model)
+bool PPM_CONTEXT::decodeSymbol1(ModelPPM *Model)
 {
   Model->Coder.SubRange.scale=U.SummFreq;
   STATE* p=U.Stats;
@@ -449,7 +449,7 @@ inline bool PPM_CONTEXT::decodeSymbol1(ModelPPM *Model)
 }
 
 
-inline void PPM_CONTEXT::update2(ModelPPM *Model, STATE* p)
+void PPM_CONTEXT::update2(ModelPPM *Model, STATE* p)
 {
   (Model->FoundState=p)->Freq += 4;
   U.SummFreq += 4;
@@ -460,7 +460,7 @@ inline void PPM_CONTEXT::update2(ModelPPM *Model, STATE* p)
 }
 
 
-inline SEE2_CONTEXT* PPM_CONTEXT::makeEscFreq2(ModelPPM *Model, int Diff)
+SEE2_CONTEXT* PPM_CONTEXT::makeEscFreq2(ModelPPM *Model, int Diff)
 {
   SEE2_CONTEXT* psee2c;
   if (NumStats != 256)
@@ -482,7 +482,7 @@ inline SEE2_CONTEXT* PPM_CONTEXT::makeEscFreq2(ModelPPM *Model, int Diff)
 
 
 
-inline bool PPM_CONTEXT::decodeSymbol2(ModelPPM *Model)
+bool PPM_CONTEXT::decodeSymbol2(ModelPPM *Model)
 {
   int count, HiCnt, i=NumStats-Model->NumMasked;
   SEE2_CONTEXT* psee2c=makeEscFreq2(Model, i);
@@ -528,7 +528,7 @@ inline bool PPM_CONTEXT::decodeSymbol2(ModelPPM *Model)
 }
 
 
-inline void ModelPPM::ClearMask()
+void ModelPPM::ClearMask()
 {
   EscCount=1;
   memset(CharMask, 0, sizeof(CharMask));
