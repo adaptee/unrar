@@ -1,4 +1,7 @@
-#include "rar.hpp"
+#include "extinfo.hpp"
+
+#include "cmddata.hpp"
+#include "archive.hpp"
 
 #ifdef _UNIX
 #include "uowners.cpp"
