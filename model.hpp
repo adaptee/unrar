@@ -4,6 +4,9 @@
 #include "coder.hpp"
 #include "suballoc.hpp"
 
+#include "rardefs.hpp"
+
+
 const int MAX_O=64;                   /* maximum allowed model order */
 
 const int INT_BITS=7, PERIOD_BITS=7, TOT_BITS=INT_BITS+PERIOD_BITS,
@@ -55,7 +58,7 @@ struct FreqData
   STATE _PACK_ATTR * Stats;
 };
 
-struct PPM_CONTEXT 
+struct PPM_CONTEXT
 {
     ushort NumStats;
     union
@@ -65,17 +68,17 @@ struct PPM_CONTEXT
     };
 
     PPM_CONTEXT* Suffix;
-    inline void encodeBinSymbol(ModelPPM *Model,int symbol);  // MaxOrder:
-    inline void encodeSymbol1(ModelPPM *Model,int symbol);    //  ABCD    context
-    inline void encodeSymbol2(ModelPPM *Model,int symbol);    //   BCD    suffix
+    inline void encodeBinSymbol(ModelPPM *Model, int symbol);  // MaxOrder:
+    inline void encodeSymbol1(ModelPPM *Model, int symbol);    //  ABCD    context
+    inline void encodeSymbol2(ModelPPM *Model, int symbol);    //   BCD    suffix
     inline void decodeBinSymbol(ModelPPM *Model);  //   BCDE   successor
     inline bool decodeSymbol1(ModelPPM *Model);    // other orders:
     inline bool decodeSymbol2(ModelPPM *Model);    //   BCD    context
-    inline void update1(ModelPPM *Model,STATE* p); //    CD    suffix
-    inline void update2(ModelPPM *Model,STATE* p); //   BCDE   successor
+    inline void update1(ModelPPM *Model, STATE* p); //    CD    suffix
+    inline void update2(ModelPPM *Model, STATE* p); //   BCDE   successor
     void rescale(ModelPPM *Model);
-    inline PPM_CONTEXT* createChild(ModelPPM *Model,STATE* pStats,STATE& FirstState);
-    inline SEE2_CONTEXT* makeEscFreq2(ModelPPM *Model,int Diff);
+    inline PPM_CONTEXT* createChild(ModelPPM *Model, STATE* pStats, STATE& FirstState);
+    inline SEE2_CONTEXT* makeEscFreq2(ModelPPM *Model, int Diff);
 };
 
 #ifndef STRICT_ALIGNMENT_REQUIRED
@@ -86,26 +89,26 @@ struct PPM_CONTEXT
 #endif
 #endif
 
-const uint UNIT_SIZE=Max(sizeof(PPM_CONTEXT),sizeof(RAR_MEM_BLK));
+const uint UNIT_SIZE=Max(sizeof(PPM_CONTEXT), sizeof(RAR_MEM_BLK));
 const uint FIXED_UNIT_SIZE=12;
 
 /*
-inline PPM_CONTEXT::PPM_CONTEXT(STATE* pStats,PPM_CONTEXT* ShorterContext):
+inline PPM_CONTEXT::PPM_CONTEXT(STATE* pStats, PPM_CONTEXT* ShorterContext):
         NumStats(1), Suffix(ShorterContext) { pStats->Successor=this; }
 inline PPM_CONTEXT::PPM_CONTEXT(): NumStats(0) {}
 */
 
 template <class T>
-inline void _PPMD_SWAP(T& t1,T& t2) { T tmp=t1; t1=t2; t2=tmp; }
+inline void _PPMD_SWAP(T& t1, T& t2) { T tmp=t1; t1=t2; t2=tmp; }
 
 
 class ModelPPM
 {
   private:
     friend struct PPM_CONTEXT;
-    
+
     SEE2_CONTEXT SEE2Cont[25][16], DummySEE2Cont;
-    
+
     struct PPM_CONTEXT *MinContext, *MedContext, *MaxContext;
     STATE* FoundState;      // found next state transition
     int NumMasked, InitEsc, OrderFall, MaxOrder, RunLength, InitRL;
@@ -118,14 +121,14 @@ class ModelPPM
 
     void RestartModelRare();
     void StartModelRare(int MaxOrder);
-    inline PPM_CONTEXT* CreateSuccessors(bool Skip,STATE* p1);
+    inline PPM_CONTEXT* CreateSuccessors(bool Skip, STATE* p1);
 
     inline void UpdateModel();
     inline void ClearMask();
   public:
     ModelPPM();
     void CleanUp(); // reset PPM variables after data error
-    bool DecodeInit(Unpack *UnpackRead,int &EscChar);
+    bool DecodeInit(Unpack *UnpackRead, int &EscChar);
     int DecodeChar();
 };
 
