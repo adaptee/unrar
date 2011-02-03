@@ -13,6 +13,7 @@
 #include "rardefs.hpp"
 #include "raros.hpp"
 #include "os.hpp"
+#include "errhnd.hpp"
 
 SubAllocator::SubAllocator()
 {
