@@ -1,6 +1,9 @@
 /****************************************************************************
  *  Contents: 'Carryless rangecoder' by Dmitry Subbotin                     *
  ****************************************************************************/
+#ifndef CODER_GUARD
+#define CODER_GUARD
+
 #include "rartypes.hpp"
 class Unpack;
 
@@ -25,3 +28,6 @@ class RangeCoder
 
     Unpack *UnpackRead;
 };
+
+#endif /* end of include guard: CODER_GUARD */
+
