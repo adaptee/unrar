@@ -1,4 +1,12 @@
-#include "rar.hpp"
+#include "raros.hpp"
+#include "os.hpp"
+#include "rartypes.hpp"
+#include "cmddata.hpp"
+#include "file.hpp"
+#include "consio.hpp"
+#include "log.hpp"
+#include "smallfn.hpp"
+#include "errhnd.hpp"
 
 #if !defined(GUI) && !defined(RARDLL)
 int main(int argc, char *argv[])
