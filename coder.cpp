@@ -12,9 +12,10 @@ void RangeCoder::InitDecoder(Unpack *UnpackRead)
   RangeCoder::UnpackRead = UnpackRead;
 
   low=code=0;
-  range=uint(-1);
+  range = uint(-1);
+
   for (int i=0;i < 4;i++)
-    code=(code << 8) | GetChar();
+    code = (code << 8) | GetChar();
 }
 
 
@@ -34,6 +35,6 @@ inline uint RangeCoder::GetCurrentShiftCount(uint SHIFT)
 
 inline void RangeCoder::Decode()
 {
-  low += range*SubRange.LowCount;
-  range *= SubRange.HighCount-SubRange.LowCount;
+  low += range * SubRange.LowCount;
+  range *= (SubRange.HighCount - SubRange.LowCount);
 }
