@@ -1,5 +1,18 @@
 #include "rar.hpp"
 
+#include "archive.hpp"
+#include "log.hpp"
+#include "crc.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+#include "savepos.hpp"
+#include "consio.hpp"
+#include "unicode.hpp"
+
+#include "errhnd.hpp"
+//FIXME; duplicated info
+extern ErrorHandler ErrHandler;
+
 #ifndef SHELL_EXT
 #include "arccmt.cpp"
 #endif
@@ -29,7 +42,7 @@ Archive::Archive(RAROptions *InitCmd)
   RecoveryPos=SIZEOF_MARKHEAD;
   RecoverySectors=-1;
 
-  memset(&NewMhd,0,sizeof(NewMhd));
+  memset(&NewMhd, 0, sizeof(NewMhd));
   NewMhd.HeadType=MAIN_HEAD;
   NewMhd.HeadSize=SIZEOF_NEWMHD;
   HeaderCRC=0;
@@ -56,7 +69,7 @@ void Archive::CheckArc(bool EnableBroken)
 {
   if (!IsArchive(EnableBroken))
   {
-    Log(FileName,St(MBadArc),FileName);
+    Log(FileName, St(MBadArc), FileName);
     ErrHandler.Exit(FATAL_ERROR);
   }
 }
@@ -64,22 +77,22 @@ void Archive::CheckArc(bool EnableBroken)
 
 
 #if !defined(SHELL_EXT) && !defined(SFX_MODULE)
-void Archive::CheckOpen(const char *Name,const wchar *NameW)
+void Archive::CheckOpen(const char *Name, const wchar *NameW)
 {
-  TOpen(Name,NameW);
+  TOpen(Name, NameW);
   CheckArc(false);
 }
 #endif
 
 
-bool Archive::WCheckOpen(const char *Name,const wchar *NameW)
+bool Archive::WCheckOpen(const char *Name, const wchar *NameW)
 {
-  if (!WOpen(Name,NameW))
+  if (!WOpen(Name, NameW))
     return(false);
   if (!IsArchive(false))
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MNotRAR),FileName);
+    Log(FileName, St(MNotRAR), FileName);
 #endif
     Close();
     return(false);
@@ -116,24 +129,24 @@ bool Archive::IsArchive(bool EnableBroken)
   if (IsDevice())
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MInvalidName),FileName);
+    Log(FileName, St(MInvalidName), FileName);
 #endif
     return(false);
   }
 #endif
-  if (Read(MarkHead.Mark,SIZEOF_MARKHEAD)!=SIZEOF_MARKHEAD)
+  if (Read(MarkHead.Mark, SIZEOF_MARKHEAD)!=SIZEOF_MARKHEAD)
     return(false);
   SFXSize=0;
   if (IsSignature(MarkHead.Mark))
   {
     if (OldFormat)
-      Seek(0,SEEK_SET);
+      Seek(0, SEEK_SET);
   }
   else
   {
     Array<char> Buffer(MAXSFXSIZE);
     long CurPos=(long)Tell();
-    int ReadSize=Read(&Buffer[0],Buffer.Size()-16);
+    int ReadSize=Read(&Buffer[0], Buffer.Size()-16);
     for (int I=0;I<ReadSize;I++)
       if (Buffer[I]==0x52 && IsSignature((byte *)&Buffer[I]))
       {
@@ -144,9 +157,9 @@ bool Archive::IsArchive(bool EnableBroken)
             continue;
         }
         SFXSize=CurPos+I;
-        Seek(SFXSize,SEEK_SET);
+        Seek(SFXSize, SEEK_SET);
         if (!OldFormat)
-          Read(MarkHead.Mark,SIZEOF_MARKHEAD);
+          Read(MarkHead.Mark, SIZEOF_MARKHEAD);
         break;
       }
     if (SFXSize==0)
@@ -166,7 +179,7 @@ bool Archive::IsArchive(bool EnableBroken)
     if (HeaderCRC!=NewMhd.HeadCRC)
     {
 #ifndef SHELL_EXT
-      Log(FileName,St(MLogMainHead));
+      Log(FileName, St(MLogMainHead));
 #endif
       Alarm();
       if (!EnableBroken)
@@ -188,8 +201,8 @@ bool Archive::IsArchive(bool EnableBroken)
 #else
     ErrHandler.SetErrorCode(WARNING);
   #if !defined(SILENT) && !defined(SFX_MODULE)
-      Log(FileName,St(MUnknownMeth),FileName);
-      Log(FileName,St(MVerRequired),NewMhd.EncryptVer/10,NewMhd.EncryptVer%10);
+      Log(FileName, St(MUnknownMeth), FileName);
+      Log(FileName, St(MVerRequired), NewMhd.EncryptVer/10, NewMhd.EncryptVer%10);
   #endif
 #endif
     return(false);
@@ -209,7 +222,7 @@ bool Archive::IsArchive(bool EnableBroken)
   if (!SilentOpen || !Encrypted)
   {
     SaveFilePos SavePos(*this);
-    int64 SaveCurBlockPos=CurBlockPos,SaveNextBlockPos=NextBlockPos;
+    int64 SaveCurBlockPos=CurBlockPos, SaveNextBlockPos=NextBlockPos;
 
     NotFirstVolume=false;
     while (ReadHeader()!=0)
@@ -237,8 +250,8 @@ bool Archive::IsArchive(bool EnableBroken)
   }
   if (!Volume || !NotFirstVolume)
   {
-    strcpy(FirstVolumeName,FileName);
-    wcscpy(FirstVolumeNameW,FileNameW);
+    strcpy(FirstVolumeName, FileName);
+    wcscpy(FirstVolumeNameW, FileNameW);
   }
 
   return(true);
@@ -249,7 +262,7 @@ bool Archive::IsArchive(bool EnableBroken)
 
 void Archive::SeekToNext()
 {
-  Seek(NextBlockPos,SEEK_SET);
+  Seek(NextBlockPos, SEEK_SET);
 }
 
 
@@ -261,7 +274,7 @@ int Archive::GetRecoverySize(bool Required)
   if (RecoverySectors!=-1 || !Required)
     return(RecoverySectors);
   SaveFilePos SavePos(*this);
-  Seek(SFXSize,SEEK_SET);
+  Seek(SFXSize, SEEK_SET);
   SearchSubBlock(SUBHEAD_TYPE_RR);
   return(RecoverySectors);
 }
