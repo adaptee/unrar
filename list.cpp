@@ -1,15 +1,27 @@
-#include "rar.hpp"
+#include "list.hpp"
 
-static void ListFileHeader(FileHeader &hd,bool Verbose,bool Technical,bool &TitleShown,bool Bare);
+#include "headers.hpp"
+#include "archive.hpp"
+#include "volume.hpp"
+#include "cmddata.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+#include "consio.hpp"
+#include "unicode.hpp"
+#include "strfn.hpp"
+#include "pathfn.hpp"
+#include "smallfn.hpp"
+
+static void ListFileHeader(FileHeader &hd, bool Verbose, bool Technical, bool &TitleShown, bool Bare);
 static void ListSymLink(Archive &Arc);
-static void ListFileAttr(uint A,int HostOS);
+static void ListFileAttr(uint A, int HostOS);
 static void ListOldSubHeader(Archive &Arc);
-static void ListNewSubHeader(CommandData *Cmd,Archive &Arc,bool Technical);
+static void ListNewSubHeader(CommandData *Cmd, Archive &Arc, bool Technical);
 
 void ListArchive(CommandData *Cmd)
 {
-  int64 SumPackSize=0,SumUnpSize=0;
-  uint ArcCount=0,SumFileCount=0;
+  int64 SumPackSize=0, SumUnpSize=0;
+  uint ArcCount=0, SumFileCount=0;
   bool Technical=(Cmd->Command[1]=='T');
   bool Bare=(Cmd->Command[1]=='B');
   bool Verbose=(*Cmd->Command=='V');
@@ -17,18 +29,18 @@ void ListArchive(CommandData *Cmd)
   char ArcName[NM];
   wchar ArcNameW[NM];
 
-  while (Cmd->GetArcName(ArcName,ArcNameW,sizeof(ArcName)))
+  while (Cmd->GetArcName(ArcName, ArcNameW, sizeof(ArcName)))
   {
     Archive Arc(Cmd);
 #ifdef _WIN_ALL
     Arc.RemoveSequentialFlag();
 #endif
-    if (!Arc.WOpen(ArcName,ArcNameW))
+    if (!Arc.WOpen(ArcName, ArcNameW))
       continue;
     bool FileMatched=true;
     while (1)
     {
-      int64 TotalPackSize=0,TotalUnpSize=0;
+      int64 TotalPackSize=0, TotalUnpSize=0;
       uint FileCount=0;
       if (Arc.IsArchive(true))
       {
@@ -58,7 +70,7 @@ void ListArchive(CommandData *Cmd)
               mprintf(St(MListArc1));
             else
               mprintf(St(MListArc2));
-          mprintf(" %s\n",Arc.FileName);
+          mprintf(" %s\n", Arc.FileName);
           if (Technical)
           {
             if (Arc.Protected)
@@ -75,11 +87,11 @@ void ListArchive(CommandData *Cmd)
           switch(HeaderType)
           {
             case FILE_HEAD:
-              IntToExt(Arc.NewLhd.FileName,Arc.NewLhd.FileName);
+              IntToExt(Arc.NewLhd.FileName, Arc.NewLhd.FileName);
               FileMatched=Cmd->IsProcessFile(Arc.NewLhd)!=0;
 			  if (FileMatched)
               {
-                ListFileHeader(Arc.NewLhd,Verbose,Technical,TitleShown,Bare);
+                ListFileHeader(Arc.NewLhd, Verbose, Technical, TitleShown, Bare);
                 if (!(Arc.NewLhd.Flags & LHD_SPLIT_BEFORE))
                 {
                   TotalUnpSize+=Arc.NewLhd.FullUnpSize;
@@ -104,8 +116,8 @@ void ListArchive(CommandData *Cmd)
               if (FileMatched && !Bare)
               {
                 if (Technical)
-                  ListFileHeader(Arc.SubHead,Verbose,true,TitleShown,false);
-                ListNewSubHeader(Cmd,Arc,Technical);
+                  ListFileHeader(Arc.SubHead, Verbose, true, TitleShown, false);
+                ListNewSubHeader(Cmd, Arc, Technical);
               }
               break;
           }
@@ -118,13 +130,13 @@ void ListArchive(CommandData *Cmd)
             for (int I=0;I<79;I++)
               mprintf("-");
             char UnpSizeText[20];
-            itoa(TotalUnpSize,UnpSizeText);
-        
+            itoa(TotalUnpSize, UnpSizeText);
+
             char PackSizeText[20];
-            itoa(TotalPackSize,PackSizeText);
-        
-            mprintf("\n%5lu %16s %8s %3d%%",FileCount,UnpSizeText,
-                    PackSizeText,ToPercentUnlim(TotalPackSize,TotalUnpSize));
+            itoa(TotalPackSize, PackSizeText);
+
+            mprintf("\n%5lu %16s %8s %3d%%", FileCount, UnpSizeText,
+                    PackSizeText, ToPercentUnlim(TotalPackSize, TotalUnpSize));
             SumFileCount+=FileCount;
             SumUnpSize+=TotalUnpSize;
             SumPackSize+=TotalPackSize;
@@ -132,7 +144,7 @@ void ListArchive(CommandData *Cmd)
             if (Arc.EndArcHead.Flags & EARC_VOLNUMBER)
             {
               mprintf("       ");
-              mprintf(St(MVolumeNumber),Arc.EndArcHead.VolNumber+1);
+              mprintf(St(MVolumeNumber), Arc.EndArcHead.VolNumber+1);
             }
 #endif
             mprintf("\n");
@@ -146,9 +158,9 @@ void ListArchive(CommandData *Cmd)
         if (Cmd->VolSize!=0 && ((Arc.NewLhd.Flags & LHD_SPLIT_AFTER) ||
             Arc.GetHeaderType()==ENDARC_HEAD &&
             (Arc.EndArcHead.Flags & EARC_NEXT_VOLUME)!=0) &&
-            MergeArchive(Arc,NULL,false,*Cmd->Command))
+            MergeArchive(Arc, NULL, false,*Cmd->Command))
         {
-          Arc.Seek(0,SEEK_SET);
+          Arc.Seek(0, SEEK_SET);
         }
         else
 #endif
@@ -157,23 +169,23 @@ void ListArchive(CommandData *Cmd)
       else
       {
         if (Cmd->ArcNames->ItemsCount()<2 && !Bare)
-          mprintf(St(MNotRAR),Arc.FileName);
+          mprintf(St(MNotRAR), Arc.FileName);
         break;
       }
     }
   }
   if (ArcCount>1 && !Bare)
   {
-    char UnpSizeText[20],PackSizeText[20];
-    itoa(SumUnpSize,UnpSizeText);
-    itoa(SumPackSize,PackSizeText);
-    mprintf("\n%5lu %16s %8s %3d%%\n",SumFileCount,UnpSizeText,
-            PackSizeText,ToPercentUnlim(SumPackSize,SumUnpSize));
+    char UnpSizeText[20], PackSizeText[20];
+    itoa(SumUnpSize, UnpSizeText);
+    itoa(SumPackSize, PackSizeText);
+    mprintf("\n%5lu %16s %8s %3d%%\n", SumFileCount, UnpSizeText,
+            PackSizeText, ToPercentUnlim(SumPackSize, SumUnpSize));
   }
 }
 
 
-void ListFileHeader(FileHeader &hd,bool Verbose,bool Technical,bool &TitleShown,bool Bare)
+void ListFileHeader(FileHeader &hd, bool Verbose, bool Technical, bool &TitleShown, bool Bare)
 {
   if (!Bare)
   {
@@ -192,7 +204,7 @@ void ListFileHeader(FileHeader &hd,bool Verbose,bool Technical,bool &TitleShown,
     }
 
     if (hd.HeadType==NEWSUB_HEAD)
-      mprintf(St(MSubHeadType),hd.FileName);
+      mprintf(St(MSubHeadType), hd.FileName);
 
     mprintf("\n%c",(hd.Flags & LHD_PASSWORD) ? '*' : ' ');
   }
@@ -203,30 +215,30 @@ void ListFileHeader(FileHeader &hd,bool Verbose,bool Technical,bool &TitleShown,
   char ConvertedName[NM];
   if ((hd.Flags & LHD_UNICODE)!=0 && *hd.FileNameW!=0 && UnicodeEnabled())
   {
-    if (WideToChar(hd.FileNameW,ConvertedName) && *ConvertedName!=0)
+    if (WideToChar(hd.FileNameW, ConvertedName) && *ConvertedName!=0)
       Name=ConvertedName;
   }
 #endif
 
   if (Bare)
   {
-    mprintf("%s\n",Verbose ? Name:PointToName(Name));
+    mprintf("%s\n", Verbose ? Name:PointToName(Name));
     return;
   }
 
   if (Verbose)
-    mprintf("%s\n%12s ",Name,"");
+    mprintf("%s\n%12s ", Name,"");
   else
-    mprintf("%-12s",PointToName(Name));
+    mprintf("%-12s", PointToName(Name));
 
-  char UnpSizeText[20],PackSizeText[20];
+  char UnpSizeText[20], PackSizeText[20];
   if (hd.FullUnpSize==INT64NDF)
     strcpy(UnpSizeText,"?");
   else
-    itoa(hd.FullUnpSize,UnpSizeText);
-  itoa(hd.FullPackSize,PackSizeText);
+    itoa(hd.FullUnpSize, UnpSizeText);
+  itoa(hd.FullPackSize, PackSizeText);
 
-  mprintf(" %8s %8s ",UnpSizeText,PackSizeText);
+  mprintf(" %8s %8s ", UnpSizeText, PackSizeText);
 
   if ((hd.Flags & LHD_SPLIT_BEFORE) && (hd.Flags & LHD_SPLIT_AFTER))
     mprintf(" <->");
@@ -237,24 +249,24 @@ void ListFileHeader(FileHeader &hd,bool Verbose,bool Technical,bool &TitleShown,
       if (hd.Flags & LHD_SPLIT_AFTER)
         mprintf(" -->");
       else
-        mprintf("%3d%%",ToPercentUnlim(hd.FullPackSize,hd.FullUnpSize));
+        mprintf("%3d%%", ToPercentUnlim(hd.FullPackSize, hd.FullUnpSize));
 
   char DateStr[50];
-  hd.mtime.GetText(DateStr,false);
-  mprintf(" %s ",DateStr);
+  hd.mtime.GetText(DateStr, false);
+  mprintf(" %s ", DateStr);
 
   if (hd.HeadType==NEWSUB_HEAD)
     mprintf("  %c....B  ",(hd.SubFlags & SUBHEAD_FLAGS_INHERITED) ? 'I' : '.');
   else
-    ListFileAttr(hd.FileAttr,hd.HostOS);
+    ListFileAttr(hd.FileAttr, hd.HostOS);
 
-  mprintf(" %8.8X",hd.FileCRC);
-  mprintf(" m%d",hd.Method-0x30);
+  mprintf(" %8.8X", hd.FileCRC);
+  mprintf(" m%d", hd.Method-0x30);
   if ((hd.Flags & LHD_WINDOWMASK)<=6*32)
     mprintf("%c",((hd.Flags&LHD_WINDOWMASK)>>5)+'a');
   else
     mprintf(" ");
-  mprintf(" %d.%d",hd.UnpVer/10,hd.UnpVer%10);
+  mprintf(" %d.%d", hd.UnpVer/10, hd.UnpVer%10);
 
   static const char *RarOS[]={
     "DOS","OS/2","Windows","Unix","Mac OS","BeOS","WinCE","","",""
@@ -274,10 +286,10 @@ void ListSymLink(Archive &Arc)
     if ((Arc.NewLhd.Flags & LHD_PASSWORD)==0)
     {
       char FileName[NM];
-      int DataSize=Min(Arc.NewLhd.PackSize,sizeof(FileName)-1);
-      Arc.Read(FileName,DataSize);
+      int DataSize=Min(Arc.NewLhd.PackSize, sizeof(FileName)-1);
+      Arc.Read(FileName, DataSize);
       FileName[DataSize]=0;
-      mprintf("\n%22s %s","-->",FileName);
+      mprintf("\n%22s %s","-->", FileName);
     }
     else
     {
@@ -288,7 +300,7 @@ void ListSymLink(Archive &Arc)
 }
 
 
-void ListFileAttr(uint A,int HostOS)
+void ListFileAttr(uint A, int HostOS)
 {
   switch(HostOS)
   {
@@ -343,11 +355,11 @@ void ListOldSubHeader(Archive &Arc)
       mprintf(St(MListEAHead));
       break;
     case UO_HEAD:
-      mprintf(St(MListUOHead),Arc.UOHead.OwnerName,Arc.UOHead.GroupName);
+      mprintf(St(MListUOHead), Arc.UOHead.OwnerName, Arc.UOHead.GroupName);
       break;
     case MAC_HEAD:
-      mprintf(St(MListMACHead1),Arc.MACHead.fileType>>24,Arc.MACHead.fileType>>16,Arc.MACHead.fileType>>8,Arc.MACHead.fileType);
-      mprintf(St(MListMACHead2),Arc.MACHead.fileCreator>>24,Arc.MACHead.fileCreator>>16,Arc.MACHead.fileCreator>>8,Arc.MACHead.fileCreator);
+      mprintf(St(MListMACHead1), Arc.MACHead.fileType>>24, Arc.MACHead.fileType>>16, Arc.MACHead.fileType>>8, Arc.MACHead.fileType);
+      mprintf(St(MListMACHead2), Arc.MACHead.fileCreator>>24, Arc.MACHead.fileCreator>>16, Arc.MACHead.fileCreator>>8, Arc.MACHead.fileCreator);
       break;
     case BEEA_HEAD:
       mprintf(St(MListBeEAHead));
@@ -356,27 +368,27 @@ void ListOldSubHeader(Archive &Arc)
       mprintf(St(MListNTACLHead));
       break;
     case STREAM_HEAD:
-      mprintf(St(MListStrmHead),Arc.StreamHead.StreamName);
+      mprintf(St(MListStrmHead), Arc.StreamHead.StreamName);
       break;
     default:
-      mprintf(St(MListUnkHead),Arc.SubBlockHead.SubType);
+      mprintf(St(MListUnkHead), Arc.SubBlockHead.SubType);
       break;
   }
 }
 #endif
 
 
-void ListNewSubHeader(CommandData *Cmd,Archive &Arc,bool Technical)
+void ListNewSubHeader(CommandData *Cmd, Archive &Arc, bool Technical)
 {
   if (Arc.SubHead.CmpName(SUBHEAD_TYPE_CMT) &&
       (Arc.SubHead.Flags & LHD_SPLIT_BEFORE)==0 && !Cmd->DisableComment)
   {
     Array<byte> CmtData;
-    size_t ReadSize=Arc.ReadCommentData(&CmtData,NULL);
+    size_t ReadSize=Arc.ReadCommentData(&CmtData, NULL);
     if (ReadSize!=0)
     {
       mprintf(St(MFileComment));
-      OutComment((char *)&CmtData[0],ReadSize);
+      OutComment((char *)&CmtData[0], ReadSize);
     }
   }
   if (Arc.SubHead.CmpName(SUBHEAD_TYPE_STREAM) &&
@@ -387,10 +399,10 @@ void ListNewSubHeader(CommandData *Cmd,Archive &Arc,bool Technical)
     char DestName[NM];
     if (DestSize<sizeof(DestName))
     {
-      RawToWide(&Arc.SubHead.SubData[0],DestNameW,DestSize);
+      RawToWide(&Arc.SubHead.SubData[0], DestNameW, DestSize);
       DestNameW[DestSize]=0;
-      WideToChar(DestNameW,DestName);
-      mprintf("\n %s",DestName);
+      WideToChar(DestNameW, DestName);
+      mprintf("\n %s", DestName);
     }
   }
 }
