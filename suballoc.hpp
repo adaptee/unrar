@@ -4,6 +4,9 @@
  *  1999-2000                                                               *
  *  Contents: interface to memory allocation routines                       *
  ****************************************************************************/
+
+#include "rartypes.hpp"
+
 #if !defined(_SUBALLOC_H_)
 #define _SUBALLOC_H_
 
@@ -20,16 +23,16 @@ const int N_INDEXES=N1+N2+N3+N4;
 #pragma pack(1)
 #endif
 
-struct RAR_MEM_BLK 
+struct RAR_MEM_BLK
 {
   ushort Stamp, NU;
   RAR_MEM_BLK* next, * prev;
-  void insertAt(RAR_MEM_BLK* p) 
+  void insertAt(RAR_MEM_BLK* p)
   {
     next=(prev=p)->next;
     p->next=next->prev=this;
   }
-  void remove() 
+  void remove()
   {
     prev->next=next;
     next->prev=prev;
@@ -53,14 +56,14 @@ struct RAR_NODE
 class SubAllocator
 {
   private:
-    inline void InsertNode(void* p,int indx);
+    inline void InsertNode(void* p, int indx);
     inline void* RemoveNode(int indx);
     inline uint U2B(int NU);
-    inline void SplitBlock(void* pv,int OldIndx,int NewIndx);
+    inline void SplitBlock(void* pv, int OldIndx, int NewIndx);
     uint GetUsedMemory();
     inline void GlueFreeBlocks();
     void* AllocUnitsRare(int indx);
-    inline RAR_MEM_BLK* MBPtr(RAR_MEM_BLK *BasePtr,int Items);
+    inline RAR_MEM_BLK* MBPtr(RAR_MEM_BLK *BasePtr, int Items);
 
     long SubAllocatorSize;
     byte Indx2Units[N_INDEXES], Units2Indx[128], GlueCount;
@@ -75,9 +78,9 @@ class SubAllocator
     void  InitSubAllocator();
     inline void* AllocContext();
     inline void* AllocUnits(int NU);
-    inline void* ExpandUnits(void* ptr,int OldNU);
-    inline void* ShrinkUnits(void* ptr,int OldNU,int NewNU);
-    inline void  FreeUnits(void* ptr,int OldNU);
+    inline void* ExpandUnits(void* ptr, int OldNU);
+    inline void* ShrinkUnits(void* ptr, int OldNU, int NewNU);
+    inline void  FreeUnits(void* ptr, int OldNU);
     long GetAllocatedMemory() {return(SubAllocatorSize);};
 
     byte *pText, *UnitsStart,*HeapEnd,*FakeUnitsStart;

@@ -5,6 +5,15 @@
  *  Contents: memory allocation routines                                    *
  ****************************************************************************/
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "suballoc.hpp"
+#include "model.hpp"
+#include "rardefs.hpp"
+#include "raros.hpp"
+#include "os.hpp"
+
 SubAllocator::SubAllocator()
 {
   Clean();
@@ -17,14 +26,14 @@ void SubAllocator::Clean()
 }
 
 
-inline void SubAllocator::InsertNode(void* p,int indx) 
+inline void SubAllocator::InsertNode(void* p, int indx)
 {
   ((RAR_NODE*) p)->next=FreeList[indx].next;
   FreeList[indx].next=(RAR_NODE*) p;
 }
 
 
-inline void* SubAllocator::RemoveNode(int indx) 
+inline void* SubAllocator::RemoveNode(int indx)
 {
   RAR_NODE* RetVal=FreeList[indx].next;
   FreeList[indx].next=RetVal->next;
@@ -32,8 +41,8 @@ inline void* SubAllocator::RemoveNode(int indx)
 }
 
 
-inline uint SubAllocator::U2B(int NU) 
-{ 
+inline uint SubAllocator::U2B(int NU)
+{
   // We calculate the size of units in bytes based on real UNIT_SIZE.
   // In original implementation it was 8*NU+4*NU.
   return UNIT_SIZE*NU;
@@ -43,23 +52,23 @@ inline uint SubAllocator::U2B(int NU)
 
 // Calculate RAR_MEM_BLK+Items address. Real RAR_MEM_BLK size must be
 // equal to UNIT_SIZE, so we cannot just add Items to RAR_MEM_BLK address.
-inline RAR_MEM_BLK* SubAllocator::MBPtr(RAR_MEM_BLK *BasePtr,int Items)
+inline RAR_MEM_BLK* SubAllocator::MBPtr(RAR_MEM_BLK *BasePtr, int Items)
 {
   return((RAR_MEM_BLK*)( ((byte *)(BasePtr))+U2B(Items) ));
 }
 
 
-inline void SubAllocator::SplitBlock(void* pv,int OldIndx,int NewIndx)
+inline void SubAllocator::SplitBlock(void* pv, int OldIndx, int NewIndx)
 {
   int i, UDiff=Indx2Units[OldIndx]-Indx2Units[NewIndx];
   byte* p=((byte*) pv)+U2B(Indx2Units[NewIndx]);
-  if (Indx2Units[i=Units2Indx[UDiff-1]] != UDiff) 
+  if (Indx2Units[i=Units2Indx[UDiff-1]] != UDiff)
   {
     InsertNode(p,--i);
     p += U2B(i=Indx2Units[i]);
     UDiff -= i;
   }
-  InsertNode(p,Units2Indx[UDiff-1]);
+  InsertNode(p, Units2Indx[UDiff-1]);
 }
 
 
@@ -67,7 +76,7 @@ inline void SubAllocator::SplitBlock(void* pv,int OldIndx,int NewIndx)
 
 void SubAllocator::StopSubAllocator()
 {
-  if ( SubAllocatorSize ) 
+  if ( SubAllocatorSize )
   {
     SubAllocatorSize=0;
     free(HeapStart);
@@ -105,7 +114,7 @@ bool SubAllocator::StartSubAllocator(int SASize)
 void SubAllocator::InitSubAllocator()
 {
   int i, k;
-  memset(FreeList,0,sizeof(FreeList));
+  memset(FreeList, 0, sizeof(FreeList));
   pText=HeapStart;
 
   // Original algorithm operates with 12 byte FIXED_UNIT_SIZE, but actual
@@ -130,7 +139,7 @@ void SubAllocator::InitSubAllocator()
   // Real size of this area. We correct it according to UNIT_SIZE vs
   // FIXED_UNIT_SIZE difference. Also we add one more UNIT_SIZE
   // to compensate a possible reminder from Size1/FIXED_UNIT_SIZE,
-  // which would be lost otherwise. We add UNIT_SIZE instead of 
+  // which would be lost otherwise. We add UNIT_SIZE instead of
   // this Size1%FIXED_UNIT_SIZE reminder, because it allows to align
   // UnitsStart easily and adding more than reminder is ok for algorithm.
   uint RealSize1=Size1/FIXED_UNIT_SIZE*UNIT_SIZE+UNIT_SIZE;
@@ -148,13 +157,13 @@ void SubAllocator::InitSubAllocator()
   FakeUnitsStart=HeapStart+Size1;
 
   HiUnit=LoUnit+RealSize2;
-  for (i=0,k=1;i < N1     ;i++,k += 1)
+  for (i=0, k=1;i < N1     ;i++, k += 1)
     Indx2Units[i]=k;
-  for (k++;i < N1+N2      ;i++,k += 2)
+  for (k++;i < N1+N2      ;i++, k += 2)
     Indx2Units[i]=k;
-  for (k++;i < N1+N2+N3   ;i++,k += 3)
+  for (k++;i < N1+N2+N3   ;i++, k += 3)
     Indx2Units[i]=k;
-  for (k++;i < N1+N2+N3+N4;i++,k += 4)
+  for (k++;i < N1+N2+N3+N4;i++, k += 4)
     Indx2Units[i]=k;
   for (GlueCount=k=i=0;k < 128;k++)
   {
@@ -179,21 +188,21 @@ inline void SubAllocator::GlueFreeBlocks()
       p->NU=Indx2Units[i];
     }
   for (p=s0.next;p != &s0;p=p->next)
-    while ((p1=MBPtr(p,p->NU))->Stamp == 0xFFFF && int(p->NU)+p1->NU < 0x10000)
+    while ((p1=MBPtr(p, p->NU))->Stamp == 0xFFFF && int(p->NU)+p1->NU < 0x10000)
     {
       p1->remove();
       p->NU += p1->NU;
     }
   while ((p=s0.next) != &s0)
   {
-    for (p->remove(), sz=p->NU;sz > 128;sz -= 128, p=MBPtr(p,128))
-      InsertNode(p,N_INDEXES-1);
+    for (p->remove(), sz=p->NU;sz > 128;sz -= 128, p=MBPtr(p, 128))
+      InsertNode(p, N_INDEXES-1);
     if (Indx2Units[i=Units2Indx[sz-1]] != sz)
     {
       k=sz-Indx2Units[--i];
-      InsertNode(MBPtr(p,sz-k),k-1);
+      InsertNode(MBPtr(p, sz-k), k-1);
     }
-    InsertNode(p,i);
+    InsertNode(p, i);
   }
 }
 
@@ -224,7 +233,7 @@ void* SubAllocator::AllocUnitsRare(int indx)
     }
   } while ( !FreeList[i].next );
   void* RetVal=RemoveNode(i);
-  SplitBlock(RetVal,i,indx);
+  SplitBlock(RetVal, i, indx);
   return RetVal;
 }
 
@@ -253,22 +262,22 @@ void* SubAllocator::AllocContext()
 }
 
 
-void* SubAllocator::ExpandUnits(void* OldPtr,int OldNU)
+void* SubAllocator::ExpandUnits(void* OldPtr, int OldNU)
 {
   int i0=Units2Indx[OldNU-1], i1=Units2Indx[OldNU-1+1];
   if (i0 == i1)
     return OldPtr;
   void* ptr=AllocUnits(OldNU+1);
-  if ( ptr ) 
+  if ( ptr )
   {
-    memcpy(ptr,OldPtr,U2B(OldNU));
-    InsertNode(OldPtr,i0);
+    memcpy(ptr, OldPtr, U2B(OldNU));
+    InsertNode(OldPtr, i0);
   }
   return ptr;
 }
 
 
-void* SubAllocator::ShrinkUnits(void* OldPtr,int OldNU,int NewNU)
+void* SubAllocator::ShrinkUnits(void* OldPtr, int OldNU, int NewNU)
 {
   int i0=Units2Indx[OldNU-1], i1=Units2Indx[NewNU-1];
   if (i0 == i1)
@@ -276,19 +285,19 @@ void* SubAllocator::ShrinkUnits(void* OldPtr,int OldNU,int NewNU)
   if ( FreeList[i1].next )
   {
     void* ptr=RemoveNode(i1);
-    memcpy(ptr,OldPtr,U2B(NewNU));
-    InsertNode(OldPtr,i0);
+    memcpy(ptr, OldPtr, U2B(NewNU));
+    InsertNode(OldPtr, i0);
     return ptr;
-  } 
-  else 
+  }
+  else
   {
-    SplitBlock(OldPtr,i0,i1);
+    SplitBlock(OldPtr, i0, i1);
     return OldPtr;
   }
 }
 
 
-void SubAllocator::FreeUnits(void* ptr,int OldNU)
+void SubAllocator::FreeUnits(void* ptr, int OldNU)
 {
-  InsertNode(ptr,Units2Indx[OldNU-1]);
+  InsertNode(ptr, Units2Indx[OldNU-1]);
 }
