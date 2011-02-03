@@ -7,8 +7,8 @@
 #include "rartypes.hpp"
 class Unpack;
 
-
-const uint TOP=1 << 24, BOT=1 << 15;
+const uint TOP = 1 << 24;
+const uint BOT = 1 << 15;
 
 class RangeCoder
 {
