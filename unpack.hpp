@@ -3,6 +3,9 @@
 
 #include "rartypes.hpp"
 #include "array.hpp"
+#include "rarvm.hpp"
+#include "model.hpp"
+#include "compress.hpp"
 
 
 
