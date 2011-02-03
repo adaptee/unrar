@@ -1,5 +1,10 @@
-#include "rar.hpp"
+#include "errhnd.hpp"
 
+#include "file.hpp"
+#include "consio.hpp"
+#include "log.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
 
 static bool UserBreak;
 
@@ -26,7 +31,7 @@ void ErrorHandler::MemoryError()
 }
 
 
-void ErrorHandler::OpenError(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::OpenError(const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
   OpenErrorMsg(FileName);
@@ -35,12 +40,12 @@ void ErrorHandler::OpenError(const char *FileName,const wchar *FileNameW)
 }
 
 
-void ErrorHandler::CloseError(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::CloseError(const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
   if (!UserBreak)
   {
-    ErrMsg(NULL,St(MErrFClose),FileName);
+    ErrMsg(NULL, St(MErrFClose), FileName);
     SysErrMsg();
   }
 #endif
@@ -50,10 +55,10 @@ void ErrorHandler::CloseError(const char *FileName,const wchar *FileNameW)
 }
 
 
-void ErrorHandler::ReadError(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::ReadError(const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
-  ReadErrorMsg(NULL,NULL,FileName,FileNameW);
+  ReadErrorMsg(NULL, NULL, FileName, FileNameW);
 #endif
 #if !defined(SILENT) || defined(RARDLL)
   Throw(FATAL_ERROR);
@@ -61,14 +66,14 @@ void ErrorHandler::ReadError(const char *FileName,const wchar *FileNameW)
 }
 
 
-bool ErrorHandler::AskRepeatRead(const char *FileName,const wchar *FileNameW)
+bool ErrorHandler::AskRepeatRead(const char *FileName, const wchar *FileNameW)
 {
 #if !defined(SILENT) && !defined(SFX_MODULE) && !defined(_WIN_CE)
   if (!Silent)
   {
     SysErrMsg();
     mprintf("\n");
-    Log(NULL,St(MErrRead),FileName);
+    Log(NULL, St(MErrRead), FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -76,10 +81,10 @@ bool ErrorHandler::AskRepeatRead(const char *FileName,const wchar *FileNameW)
 }
 
 
-void ErrorHandler::WriteError(const char *ArcName,const wchar *ArcNameW,const char *FileName,const wchar *FileNameW)
+void ErrorHandler::WriteError(const char *ArcName, const wchar *ArcNameW, const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
-  WriteErrorMsg(ArcName,ArcNameW,FileName,FileNameW);
+  WriteErrorMsg(ArcName, ArcNameW, FileName, FileNameW);
 #endif
 #if !defined(SILENT) || defined(RARDLL)
   Throw(WRITE_ERROR);
@@ -88,11 +93,11 @@ void ErrorHandler::WriteError(const char *ArcName,const wchar *ArcNameW,const ch
 
 
 #ifdef _WIN_ALL
-void ErrorHandler::WriteErrorFAT(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::WriteErrorFAT(const char *FileName, const wchar *FileNameW)
 {
 #if !defined(SILENT) && !defined(SFX_MODULE)
   SysErrMsg();
-  ErrMsg(NULL,St(MNTFSRequired),FileName);
+  ErrMsg(NULL, St(MNTFSRequired), FileName);
 #endif
 #if !defined(SILENT) && !defined(SFX_MODULE) || defined(RARDLL)
   Throw(WRITE_ERROR);
@@ -101,14 +106,14 @@ void ErrorHandler::WriteErrorFAT(const char *FileName,const wchar *FileNameW)
 #endif
 
 
-bool ErrorHandler::AskRepeatWrite(const char *FileName,const wchar *FileNameW,bool DiskFull)
+bool ErrorHandler::AskRepeatWrite(const char *FileName, const wchar *FileNameW, bool DiskFull)
 {
 #if !defined(SILENT) && !defined(_WIN_CE)
   if (!Silent)
   {
     SysErrMsg();
     mprintf("\n");
-    Log(NULL,St(DiskFull ? MNotEnoughDisk:MErrWrite),FileName);
+    Log(NULL, St(DiskFull ? MNotEnoughDisk:MErrWrite), FileName);
     return(Ask(St(MRetryAbort))==1);
   }
 #endif
@@ -116,12 +121,12 @@ bool ErrorHandler::AskRepeatWrite(const char *FileName,const wchar *FileNameW,bo
 }
 
 
-void ErrorHandler::SeekError(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::SeekError(const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
   if (!UserBreak)
   {
-    ErrMsg(NULL,St(MErrSeek),FileName);
+    ErrMsg(NULL, St(MErrSeek), FileName);
     SysErrMsg();
   }
 #endif
@@ -134,7 +139,7 @@ void ErrorHandler::SeekError(const char *FileName,const wchar *FileNameW)
 void ErrorHandler::GeneralErrMsg(const char *Msg)
 {
 #ifndef SILENT
-  Log(NULL,"%s",Msg);
+  Log(NULL,"%s", Msg);
   SysErrMsg();
 #endif
 }
@@ -143,43 +148,43 @@ void ErrorHandler::GeneralErrMsg(const char *Msg)
 void ErrorHandler::MemoryErrorMsg()
 {
 #ifndef SILENT
-  ErrMsg(NULL,St(MErrOutMem));
+  ErrMsg(NULL, St(MErrOutMem));
 #endif
 }
 
 
-void ErrorHandler::OpenErrorMsg(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::OpenErrorMsg(const char *FileName, const wchar *FileNameW)
 {
-  OpenErrorMsg(NULL,NULL,FileName,FileNameW);
+  OpenErrorMsg(NULL, NULL, FileName, FileNameW);
 }
 
 
-void ErrorHandler::OpenErrorMsg(const char *ArcName,const wchar *ArcNameW,const char *FileName,const wchar *FileNameW)
+void ErrorHandler::OpenErrorMsg(const char *ArcName, const wchar *ArcNameW, const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
   if (FileName!=NULL)
-    Log(ArcName,St(MCannotOpen),FileName);
+    Log(ArcName, St(MCannotOpen), FileName);
   Alarm();
   SysErrMsg();
 #endif
 }
 
 
-void ErrorHandler::CreateErrorMsg(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::CreateErrorMsg(const char *FileName, const wchar *FileNameW)
 {
-  CreateErrorMsg(NULL,NULL,FileName,FileNameW);
+  CreateErrorMsg(NULL, NULL, FileName, FileNameW);
 }
 
 
-void ErrorHandler::CreateErrorMsg(const char *ArcName,const wchar *ArcNameW,const char *FileName,const wchar *FileNameW)
+void ErrorHandler::CreateErrorMsg(const char *ArcName, const wchar *ArcNameW, const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
   if (FileName!=NULL)
-    Log(ArcName,St(MCannotCreate),FileName);
+    Log(ArcName, St(MCannotCreate), FileName);
   Alarm();
 
 #if defined(_WIN_ALL) && !defined(_WIN_CE) && defined(MAX_PATH)
-  CheckLongPathErrMsg(FileName,FileNameW);
+  CheckLongPathErrMsg(FileName, FileNameW);
 #endif
 
   SysErrMsg();
@@ -188,42 +193,42 @@ void ErrorHandler::CreateErrorMsg(const char *ArcName,const wchar *ArcNameW,cons
 
 
 // Check the path length and display the error message if it is too long.
-void ErrorHandler::CheckLongPathErrMsg(const char *FileName,const wchar *FileNameW)
+void ErrorHandler::CheckLongPathErrMsg(const char *FileName, const wchar *FileNameW)
 {
 #if defined(_WIN_ALL) && !defined(_WIN_CE) && !defined (SILENT) && defined(MAX_PATH)
   if (GetLastError()==ERROR_PATH_NOT_FOUND)
   {
     wchar WideFileName[NM];
-    GetWideName(FileName,FileNameW,WideFileName,ASIZE(WideFileName));
+    GetWideName(FileName, FileNameW, WideFileName, ASIZE(WideFileName));
     size_t NameLength=wcslen(WideFileName);
     if (!IsFullPath(WideFileName))
     {
       wchar CurDir[NM];
-      GetCurrentDirectoryW(ASIZE(CurDir),CurDir);
+      GetCurrentDirectoryW(ASIZE(CurDir), CurDir);
       NameLength+=wcslen(CurDir)+1;
     }
     if (NameLength>MAX_PATH)
     {
-      Log(NULL,St(MMaxPathLimit),MAX_PATH);
+      Log(NULL, St(MMaxPathLimit), MAX_PATH);
     }
   }
 #endif
 }
 
 
-void ErrorHandler::ReadErrorMsg(const char *ArcName,const wchar *ArcNameW,const char *FileName,const wchar *FileNameW)
+void ErrorHandler::ReadErrorMsg(const char *ArcName, const wchar *ArcNameW, const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
-  ErrMsg(ArcName,St(MErrRead),FileName);
+  ErrMsg(ArcName, St(MErrRead), FileName);
   SysErrMsg();
 #endif
 }
 
 
-void ErrorHandler::WriteErrorMsg(const char *ArcName,const wchar *ArcNameW,const char *FileName,const wchar *FileNameW)
+void ErrorHandler::WriteErrorMsg(const char *ArcName, const wchar *ArcNameW, const char *FileName, const wchar *FileNameW)
 {
 #ifndef SILENT
-  ErrMsg(ArcName,St(MErrWrite),FileName);
+  ErrMsg(ArcName, St(MErrWrite), FileName);
   SysErrMsg();
 #endif
 }
@@ -239,12 +244,12 @@ void ErrorHandler::Exit(int ExitCode)
 
 
 #ifndef GUI
-void ErrorHandler::ErrMsg(const char *ArcName,const char *fmt,...)
+void ErrorHandler::ErrMsg(const char *ArcName, const char *fmt,...)
 {
   safebuf char Msg[NM+1024];
   va_list argptr;
-  va_start(argptr,fmt);
-  vsprintf(Msg,fmt,argptr);
+  va_start(argptr, fmt);
+  vsprintf(Msg, fmt, argptr);
   va_end(argptr);
 #ifdef _WIN_ALL
   if (UserBreak)
@@ -253,8 +258,8 @@ void ErrorHandler::ErrMsg(const char *ArcName,const char *fmt,...)
   Alarm();
   if (*Msg)
   {
-    Log(ArcName,"\n%s",Msg);
-    mprintf("\n%s\n",St(MProgAborted));
+    Log(ArcName,"\n%s", Msg);
+    mprintf("\n%s\n", St(MProgAborted));
   }
 }
 #endif
@@ -293,7 +298,7 @@ void _stdfunction ProcessSignal(int SigType)
 {
 #ifdef _WIN_ALL
   // When a console application is run as a service, this allows the service
-  // to continue running after the user logs off. 
+  // to continue running after the user logs off.
   if (SigType==CTRL_LOGOFF_EVENT)
     return(TRUE);
 #endif
@@ -322,11 +327,11 @@ void ErrorHandler::SetSignalHandlers(bool Enable)
   EnableBreak=Enable;
 #if !defined(GUI) && !defined(_SFX_RTL_)
 #ifdef _WIN_ALL
-  SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL,TRUE);
-//  signal(SIGBREAK,Enable ? ProcessSignal:SIG_IGN);
+  SetConsoleCtrlHandler(Enable ? ProcessSignal:NULL, TRUE);
+//  signal(SIGBREAK, Enable ? ProcessSignal:SIG_IGN);
 #else
-  signal(SIGINT,Enable ? ProcessSignal:SIG_IGN);
-  signal(SIGTERM,Enable ? ProcessSignal:SIG_IGN);
+  signal(SIGINT, Enable ? ProcessSignal:SIG_IGN);
+  signal(SIGTERM, Enable ? ProcessSignal:SIG_IGN);
 #endif
 #endif
 }
@@ -353,8 +358,8 @@ void ErrorHandler::SysErrMsg()
   wchar *lpMsgBuf=NULL;
   int ErrType=GetLastError();
   if (ErrType!=0 && FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-              NULL,ErrType,MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-              (LPTSTR)&lpMsgBuf,0,NULL))
+              NULL, ErrType, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+              (LPTSTR)&lpMsgBuf, 0, NULL))
   {
     wchar *CurMsg=lpMsgBuf;
     while (CurMsg!=NULL)
@@ -377,9 +382,9 @@ void ErrorHandler::SysErrMsg()
       char *MsgA=(char *)malloc(Length+2);
       if (MsgA!=NULL)
       {
-        WideToChar(CurMsg,MsgA,Length+1);
+        WideToChar(CurMsg, MsgA, Length+1);
         MsgA[Length]=0;
-        Log(NULL,"\n%s",MsgA);
+        Log(NULL,"\n%s", MsgA);
         free(MsgA);
       }
       CurMsg=EndMsg;
@@ -391,7 +396,7 @@ void ErrorHandler::SysErrMsg()
 #if defined(_UNIX) || defined(_EMX)
   char *err=strerror(errno);
   if (err!=NULL)
-    Log(NULL,"\n%s",err);
+    Log(NULL,"\n%s", err);
 #endif
 
 #endif
