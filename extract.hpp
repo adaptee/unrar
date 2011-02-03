@@ -1,7 +1,14 @@
 #ifndef _RAR_EXTRACT_
 #define _RAR_EXTRACT_
 
-enum EXTRACT_ARC_CODE {EXTRACT_ARC_NEXT,EXTRACT_ARC_REPEAT};
+#include "rartypes.hpp"
+#include "rdwrfn.hpp"
+
+enum EXTRACT_ARC_CODE {EXTRACT_ARC_NEXT, EXTRACT_ARC_REPEAT};
+
+class Archive;
+class CommandData;
+class Unpack;
 
 class CmdExtract
 {
@@ -38,10 +45,10 @@ class CmdExtract
     CmdExtract();
     ~CmdExtract();
     void DoExtract(CommandData *Cmd);
-    void ExtractArchiveInit(CommandData *Cmd,Archive &Arc);
-    bool ExtractCurrentFile(CommandData *Cmd,Archive &Arc,size_t HeaderSize,
+    void ExtractArchiveInit(CommandData *Cmd, Archive &Arc);
+    bool ExtractCurrentFile(CommandData *Cmd, Archive &Arc, size_t HeaderSize,
                             bool &Repeat);
-    static void UnstoreFile(ComprDataIO &DataIO,int64 DestUnpSize);
+    static void UnstoreFile(ComprDataIO &DataIO, int64 DestUnpSize);
 
     bool SignatureFound;
 };
