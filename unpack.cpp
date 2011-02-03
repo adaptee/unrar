@@ -70,7 +70,7 @@ void Unpack::DoUnpack(int Method, bool Solid)
 }
 
 
-inline void Unpack::InsertOldDist(unsigned int Distance)
+void Unpack::InsertOldDist(unsigned int Distance)
 {
     OldDist[3] = OldDist[2];
     OldDist[2] = OldDist[1];
@@ -79,14 +79,14 @@ inline void Unpack::InsertOldDist(unsigned int Distance)
 }
 
 
-inline void Unpack::InsertLastMatch(unsigned int Length, unsigned int Distance)
+void Unpack::InsertLastMatch(unsigned int Length, unsigned int Distance)
 {
     LastDist   = Distance;
     LastLength = Length;
 }
 
 
-inline void Unpack::CopyString(uint Length, uint Distance)
+void Unpack::CopyString(uint Length, uint Distance)
 {
     uint SrcPtr = UnpPtr - Distance;
     if ( (SrcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
@@ -135,7 +135,7 @@ inline void Unpack::CopyString(uint Length, uint Distance)
 }
 
 
-inline uint Unpack::DecodeNumber(DecodeTable *Dec)
+uint Unpack::DecodeNumber(DecodeTable *Dec)
 {
     // Left aligned 15 bit length raw bit field.
     uint BitField = ( getbits() & 0xfffe );
@@ -183,7 +183,7 @@ inline uint Unpack::DecodeNumber(DecodeTable *Dec)
 // We use it instead of direct m_ppm.DecodeChar call to be sure that
 // we reset PPM structures in case of corrupt data. It is important,
 // because these structures can be invalid after m_ppm.DecodeChar returned -1.
-inline int Unpack::SafePPMDecodeChar()
+int Unpack::SafePPMDecodeChar()
 {
     int ch = m_ppm.DecodeChar();
     if (ch == -1 )              // Corrupt PPM data found.
@@ -255,7 +255,7 @@ void Unpack::Unpack29(bool Solid)
         if (UnpBlockType == BLOCK_PPM)
         {
             // Here speed is critical, so we do not use SafePPMDecodeChar,
-            // because sometimes even the inline function can introduce
+            // because sometimes even the function can introduce
             // some additional penalty.
             int Ch = m_ppm.DecodeChar();
             if (Ch == -1)              // Corrupt PPM data found.

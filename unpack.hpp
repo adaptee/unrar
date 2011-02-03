@@ -96,13 +96,13 @@ private:
     void UnpWriteData(byte *Data, size_t Size);
     bool ReadTables();
     void MakeDecodeTables(byte *LengthTable, DecodeTable *Dec, uint Size);
-    inline uint DecodeNumber(DecodeTable *Dec);
-    inline int SafePPMDecodeChar();
+    uint DecodeNumber(DecodeTable *Dec);
+    int SafePPMDecodeChar();
     void CopyString();
-    inline void InsertOldDist(unsigned int Distance);
-    inline void InsertLastMatch(unsigned int Length, unsigned int Distance);
+    void InsertOldDist(unsigned int Distance);
+    void InsertLastMatch(unsigned int Length, unsigned int Distance);
     void UnpInitData(int Solid);
-    inline void CopyString(uint Length, uint Distance);
+    void CopyString(uint Length, uint Distance);
     bool ReadEndOfBlock();
     bool ReadVMCode();
     bool ReadVMCodePPM();
