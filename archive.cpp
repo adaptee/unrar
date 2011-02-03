@@ -1,12 +1,12 @@
-#include "rar.hpp"
-
 #include "archive.hpp"
-#include "log.hpp"
+
+#include "unpack.hpp"
 #include "crc.hpp"
 #include "resource.hpp"
 #include "loclang.hpp"
 #include "savepos.hpp"
 #include "consio.hpp"
+#include "log.hpp"
 #include "unicode.hpp"
 
 #include "errhnd.hpp"
