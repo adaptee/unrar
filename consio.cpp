@@ -1,13 +1,13 @@
 #include "rar.hpp"
 
 #ifndef GUI
-#include "log.cpp"
+#include "log.hpp"
 #endif
 
-static int KbdAnsi(char *Addr,int Size);
+static int KbdAnsi(char *Addr, int Size);
 
 #if !defined(GUI) && !defined(SILENT)
-static void RawPrint(char *Msg,MESSAGE_TYPE MessageType);
+static void RawPrint(char *Msg, MESSAGE_TYPE MessageType);
 static uint GetKey();
 #endif
 
@@ -15,7 +15,7 @@ static MESSAGE_TYPE MsgStream=MSG_STDOUT;
 static bool Sound=false;
 const int MaxMsgSize=2*NM+2048;
 
-void InitConsoleOptions(MESSAGE_TYPE MsgStream,bool Sound)
+void InitConsoleOptions(MESSAGE_TYPE MsgStream, bool Sound)
 {
   ::MsgStream=MsgStream;
   ::Sound=Sound;
@@ -28,9 +28,9 @@ void mprintf(const char *fmt,...)
     return;
   safebuf char Msg[MaxMsgSize];
   va_list argptr;
-  va_start(argptr,fmt);
-  vsprintf(Msg,fmt,argptr);
-  RawPrint(Msg,MsgStream);
+  va_start(argptr, fmt);
+  vsprintf(Msg, fmt, argptr);
+  RawPrint(Msg, MsgStream);
   va_end(argptr);
 }
 #endif
@@ -43,16 +43,16 @@ void eprintf(const char *fmt,...)
     return;
   safebuf char Msg[MaxMsgSize];
   va_list argptr;
-  va_start(argptr,fmt);
-  vsprintf(Msg,fmt,argptr);
-  RawPrint(Msg,MSG_STDERR);
+  va_start(argptr, fmt);
+  vsprintf(Msg, fmt, argptr);
+  RawPrint(Msg, MSG_STDERR);
   va_end(argptr);
 }
 #endif
 
 
 #if !defined(GUI) && !defined(SILENT)
-void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
+void RawPrint(char *Msg, MESSAGE_TYPE MessageType)
 {
   File OutFile;
   switch(MessageType)
@@ -68,7 +68,7 @@ void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
       return;
   }
 #ifdef _WIN_ALL
-  CharToOemA(Msg,Msg);
+  CharToOemA(Msg, Msg);
 
   char OutMsg[MaxMsgSize],*OutPos=OutMsg;
   for (int I=0;Msg[I]!=0;I++)
@@ -78,7 +78,7 @@ void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
     *(OutPos++)=Msg[I];
   }
   *OutPos=0;
-  strcpy(Msg,OutMsg);
+  strcpy(Msg, OutMsg);
 #endif
 #if defined(_UNIX) || defined(_EMX)
   char OutMsg[MaxMsgSize],*OutPos=OutMsg;
@@ -86,10 +86,10 @@ void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
     if (Msg[I]!='\r')
       *(OutPos++)=Msg[I];
   *OutPos=0;
-  strcpy(Msg,OutMsg);
+  strcpy(Msg, OutMsg);
 #endif
 
-  OutFile.Write(Msg,strlen(Msg));
+  OutFile.Write(Msg, strlen(Msg));
 }
 #endif
 
@@ -107,32 +107,32 @@ void Alarm()
 
 #ifndef SILENT
 #ifndef GUI
-void GetPasswordText(wchar *Str,uint MaxLength)
+void GetPasswordText(wchar *Str, uint MaxLength)
 {
   if (MaxLength==0)
     return;
 #ifdef _WIN_ALL
   HANDLE hConIn=GetStdHandle(STD_INPUT_HANDLE);
   HANDLE hConOut=GetStdHandle(STD_OUTPUT_HANDLE);
-  DWORD ConInMode,ConOutMode;
+  DWORD ConInMode, ConOutMode;
   DWORD Read=0;
   GetConsoleMode(hConIn,&ConInMode);
   GetConsoleMode(hConOut,&ConOutMode);
-  SetConsoleMode(hConIn,ENABLE_LINE_INPUT);
-  SetConsoleMode(hConOut,ENABLE_PROCESSED_OUTPUT|ENABLE_WRAP_AT_EOL_OUTPUT);
+  SetConsoleMode(hConIn, ENABLE_LINE_INPUT);
+  SetConsoleMode(hConOut, ENABLE_PROCESSED_OUTPUT|ENABLE_WRAP_AT_EOL_OUTPUT);
 
-  ReadConsoleW(hConIn,Str,MaxLength-1,&Read,NULL);
+  ReadConsoleW(hConIn, Str, MaxLength-1,&Read, NULL);
   Str[Read]=0;
-  SetConsoleMode(hConIn,ConInMode);
-  SetConsoleMode(hConOut,ConOutMode);
+  SetConsoleMode(hConIn, ConInMode);
+  SetConsoleMode(hConOut, ConOutMode);
 #else
   char StrA[MAXPASSWORD];
 #if defined(_EMX) || defined(_BEOS) || defined(__sparc) || defined(sparc) || defined (__VMS)
-  fgets(StrA,ASIZE(StrA)-1,stdin);
+  fgets(StrA, ASIZE(StrA)-1, stdin);
 #else
-  strncpyz(StrA,getpass(""),ASIZE(StrA));
+  strncpyz(StrA, getpass(""), ASIZE(StrA));
 #endif
-  CharToWide(StrA,Str,MaxLength);
+  CharToWide(StrA, Str, MaxLength);
 #endif
   Str[MaxLength-1]=0;
   RemoveLF(Str);
@@ -142,41 +142,41 @@ void GetPasswordText(wchar *Str,uint MaxLength)
 
 
 #ifndef SILENT
-bool GetPassword(PASSWORD_TYPE Type,const char *FileName,const wchar *FileNameW,wchar *Password,uint MaxLength)
+bool GetPassword(PASSWORD_TYPE Type, const char *FileName, const wchar *FileNameW, wchar *Password, uint MaxLength)
 {
   Alarm();
   while (true)
   {
     char PromptStr[NM+256];
 #if defined(_EMX) || defined(_BEOS)
-    strcpy(PromptStr,St(MAskPswEcho));
+    strcpy(PromptStr, St(MAskPswEcho));
 #else
-    strcpy(PromptStr,St(MAskPsw));
+    strcpy(PromptStr, St(MAskPsw));
 #endif
     if (Type!=PASSWORD_GLOBAL)
     {
-      strcat(PromptStr,St(MFor));
+      strcat(PromptStr, St(MFor));
       char *NameOnly=PointToName(FileName);
       if (strlen(PromptStr)+strlen(NameOnly)<ASIZE(PromptStr))
-        strcat(PromptStr,NameOnly);
+        strcat(PromptStr, NameOnly);
     }
-    eprintf("\n%s: ",PromptStr);
-    GetPasswordText(Password,MaxLength);
+    eprintf("\n%s: ", PromptStr);
+    GetPasswordText(Password, MaxLength);
     if (*Password==0 && Type==PASSWORD_GLOBAL)
       return(false);
     if (Type==PASSWORD_GLOBAL)
     {
       eprintf(St(MReAskPsw));
       wchar CmpStr[MAXPASSWORD];
-      GetPasswordText(CmpStr,ASIZE(CmpStr));
-      if (*CmpStr==0 || wcscmp(Password,CmpStr)!=0)
+      GetPasswordText(CmpStr, ASIZE(CmpStr));
+      if (*CmpStr==0 || wcscmp(Password, CmpStr)!=0)
       {
         eprintf(St(MNotMatchPsw));
-        memset(Password,0,MaxLength*sizeof(*Password));
-        memset(CmpStr,0,sizeof(CmpStr));
+        memset(Password, 0, MaxLength*sizeof(*Password));
+        memset(CmpStr, 0, sizeof(CmpStr));
         continue;
       }
-      memset(CmpStr,0,sizeof(CmpStr));
+      memset(CmpStr, 0, sizeof(CmpStr));
     }
     break;
   }
@@ -191,11 +191,11 @@ uint GetKey()
   char Str[80];
   bool EndOfFile;
 #if defined(__GNUC__) || defined(sun)
-  EndOfFile=(fgets(Str,sizeof(Str),stdin)==NULL);
+  EndOfFile=(fgets(Str, sizeof(Str), stdin)==NULL);
 #else
   File SrcFile;
   SrcFile.SetHandleType(FILE_HANDLESTD);
-  EndOfFile=(SrcFile.Read(Str,sizeof(Str))==0);
+  EndOfFile=(SrcFile.Read(Str, sizeof(Str))==0);
 #endif
   if (EndOfFile)
   {
@@ -213,16 +213,16 @@ int Ask(const char *AskStr)
 {
   const int MaxItems=10;
   char Item[MaxItems][40];
-  int ItemKeyPos[MaxItems],NumItems=0;
+  int ItemKeyPos[MaxItems], NumItems=0;
 
   for (const char *NextItem=AskStr;NextItem!=NULL;NextItem=strchr(NextItem+1,'_'))
   {
     char *CurItem=Item[NumItems];
-    strncpyz(CurItem,NextItem+1,ASIZE(Item[0]));
+    strncpyz(CurItem, NextItem+1, ASIZE(Item[0]));
     char *EndItem=strchr(CurItem,'_');
     if (EndItem!=NULL)
       *EndItem=0;
-    int KeyPos=0,CurKey;
+    int KeyPos=0, CurKey;
     while ((CurKey=CurItem[KeyPos])!=0)
     {
       bool Found=false;
@@ -242,13 +242,13 @@ int Ask(const char *AskStr)
     eprintf(I==0 ? (NumItems>4 ? "\n":" "):", ");
     int KeyPos=ItemKeyPos[I];
     for (int J=0;J<KeyPos;J++)
-      eprintf("%c",Item[I][J]);
-    eprintf("[%c]%s",Item[I][KeyPos],&Item[I][KeyPos+1]);
+      eprintf("%c", Item[I][J]);
+    eprintf("[%c]%s", Item[I][KeyPos],&Item[I][KeyPos+1]);
   }
   eprintf(" ");
   int Ch=GetKey();
 #if defined(_WIN_ALL)
-  OemToCharBuff((LPCSTR)&Ch,(LPTSTR)&Ch,1);
+  OemToCharBuff((LPCSTR)&Ch,(LPTSTR)&Ch, 1);
 #endif
   Ch=loctoupper(Ch);
   for (int I=0;I<NumItems;I++)
@@ -259,7 +259,7 @@ int Ask(const char *AskStr)
 #endif
 
 
-int KbdAnsi(char *Addr,size_t Size)
+int KbdAnsi(char *Addr, size_t Size)
 {
   int RetCode=0;
 #ifndef GUI
@@ -280,19 +280,19 @@ int KbdAnsi(char *Addr,size_t Size)
 }
 
 
-void OutComment(char *Comment,size_t Size)
+void OutComment(char *Comment, size_t Size)
 {
 #ifndef GUI
-  if (KbdAnsi(Comment,Size)==2)
+  if (KbdAnsi(Comment, Size)==2)
     return;
   const size_t MaxOutSize=0x400;
   for (size_t I=0;I<Size;I+=MaxOutSize)
   {
     char Msg[MaxOutSize+1];
-    size_t CopySize=Min(MaxOutSize,Size-I);
-    strncpy(Msg,Comment+I,CopySize);
+    size_t CopySize=Min(MaxOutSize, Size-I);
+    strncpy(Msg, Comment+I, CopySize);
     Msg[CopySize]=0;
-    mprintf("%s",Msg);
+    mprintf("%s", Msg);
   }
   mprintf("\n");
 #endif
