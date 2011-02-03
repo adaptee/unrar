@@ -1,6 +1,16 @@
-#include "rar.hpp"
+#include "volume.hpp"
 
-
+#include "file.hpp"
+#include "filefn.hpp"
+#include "archive.hpp"
+#include "recvol.hpp"
+#include "rdwrfn.hpp"
+#include "strfn.hpp"
+#include "pathfn.hpp"
+#include "consio.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+#include "log.hpp"
 
 
 #if defined(RARDLL) && defined(_MSC_VER) && !defined(_WIN_64)
@@ -10,7 +20,7 @@
 #pragma runtime_checks( "s", off )
 #endif
 
-bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Command)
+bool MergeArchive(Archive &Arc, ComprDataIO *DataIO, bool ShowFileName, char Command)
 {
   RAROptions *Cmd=Arc.GetRAROptions();
 
@@ -22,7 +32,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
   if (DataIO!=NULL && SplitHeader && hd->UnpVer>=20 &&
       hd->FileCRC!=0xffffffff && DataIO->PackedCRC!=~hd->FileCRC)
   {
-    Log(Arc.FileName,St(MDataBadCRC),hd->FileName,Arc.FileName);
+    Log(Arc.FileName, St(MDataBadCRC), hd->FileName, Arc.FileName);
   }
 
   int64 PosBeforeClose=Arc.Tell();
@@ -34,20 +44,20 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 
   char NextName[NM];
   wchar NextNameW[NM];
-  strcpy(NextName,Arc.FileName);
-  wcscpy(NextNameW,Arc.FileNameW);
-  NextVolumeName(NextName,NextNameW,ASIZE(NextName),(Arc.NewMhd.Flags & MHD_NEWNUMBERING)==0 || Arc.OldFormat);
+  strcpy(NextName, Arc.FileName);
+  wcscpy(NextNameW, Arc.FileNameW);
+  NextVolumeName(NextName, NextNameW, ASIZE(NextName),(Arc.NewMhd.Flags & MHD_NEWNUMBERING)==0 || Arc.OldFormat);
 
 #if !defined(SFX_MODULE) && !defined(RARDLL)
   bool RecoveryDone=false;
 #endif
-  bool FailedOpen=false,OldSchemeTested=false;
+  bool FailedOpen=false, OldSchemeTested=false;
 
-  while (!Arc.Open(NextName,NextNameW))
+  while (!Arc.Open(NextName, NextNameW))
   {
     // We need to open a new volume which size was not calculated
     // in total size before, so we cannot calculate the total progress
-    // anymore. Let's reset the total size to zero and stop 
+    // anymore. Let's reset the total size to zero and stop
     // the total progress.
     if (DataIO!=NULL)
       DataIO->TotalArcSize=0;
@@ -58,20 +68,20 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
       // name format. Some users did it for unknown reason.
       char AltNextName[NM];
       wchar AltNextNameW[NM];
-      strcpy(AltNextName,Arc.FileName);
-      wcscpy(AltNextNameW,Arc.FileNameW);
-      NextVolumeName(AltNextName,AltNextNameW,ASIZE(AltNextName),true);
+      strcpy(AltNextName, Arc.FileName);
+      wcscpy(AltNextNameW, Arc.FileNameW);
+      NextVolumeName(AltNextName, AltNextNameW, ASIZE(AltNextName), true);
       OldSchemeTested=true;
-      if (Arc.Open(AltNextName,AltNextNameW))
+      if (Arc.Open(AltNextName, AltNextNameW))
       {
-        strcpy(NextName,AltNextName);
-        wcscpy(NextNameW,AltNextNameW);
+        strcpy(NextName, AltNextName);
+        wcscpy(NextNameW, AltNextNameW);
         break;
       }
     }
 #ifdef RARDLL
     if (Cmd->Callback==NULL && Cmd->ChangeVolProc==NULL ||
-        Cmd->Callback!=NULL && Cmd->Callback(UCM_CHANGEVOLUME,Cmd->UserData,(LPARAM)NextName,RAR_VOL_ASK)==-1)
+        Cmd->Callback!=NULL && Cmd->Callback(UCM_CHANGEVOLUME, Cmd->UserData,(LPARAM)NextName, RAR_VOL_ASK)==-1)
     {
       Cmd->DllError=ERAR_EOPEN;
       FailedOpen=true;
@@ -85,18 +95,18 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
       // that it will be PASCAL type (for compatibility with Visual Basic).
 #if defined(_MSC_VER)
 #ifndef _WIN_64
-      __asm mov ebx,esp
+      __asm mov ebx, esp
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _EBX=_ESP;
 #endif
-      int RetCode=Cmd->ChangeVolProc(NextName,RAR_VOL_ASK);
+      int RetCode=Cmd->ChangeVolProc(NextName, RAR_VOL_ASK);
 
       // Restore ESP after ChangeVolProc with wrongly defined calling
       // convention broken it.
 #if defined(_MSC_VER)
 #ifndef _WIN_64
-      __asm mov esp,ebx
+      __asm mov esp, ebx
 #endif
 #elif defined(_WIN_ALL) && defined(__BORLANDC__)
       _ESP=_EBX;
@@ -114,7 +124,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
     if (!RecoveryDone)
     {
       RecVolumes RecVol;
-      RecVol.Restore(Cmd,Arc.FileName,Arc.FileNameW,true);
+      RecVol.Restore(Cmd, Arc.FileName, Arc.FileNameW, true);
       RecoveryDone=true;
       continue;
     }
@@ -128,7 +138,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
     }
 #endif
 #ifndef SILENT
-    if (Cmd->AllYes || !AskNextVol(NextName,NextNameW))
+    if (Cmd->AllYes || !AskNextVol(NextName, NextNameW))
 #endif
     {
       FailedOpen=true;
@@ -140,23 +150,23 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
   if (FailedOpen)
   {
 #if !defined(SILENT) && !defined(_WIN_CE)
-      Log(Arc.FileName,St(MAbsNextVol),NextName);
+      Log(Arc.FileName, St(MAbsNextVol), NextName);
 #endif
-    Arc.Open(Arc.FileName,Arc.FileNameW);
-    Arc.Seek(PosBeforeClose,SEEK_SET);
+    Arc.Open(Arc.FileName, Arc.FileNameW);
+    Arc.Seek(PosBeforeClose, SEEK_SET);
     return(false);
   }
   Arc.CheckArc(true);
 #ifdef RARDLL
   if (Cmd->Callback!=NULL &&
-      Cmd->Callback(UCM_CHANGEVOLUME,Cmd->UserData,(LPARAM)NextName,RAR_VOL_NOTIFY)==-1)
+      Cmd->Callback(UCM_CHANGEVOLUME, Cmd->UserData,(LPARAM)NextName, RAR_VOL_NOTIFY)==-1)
     return(false);
   if (Cmd->ChangeVolProc!=NULL)
   {
 #if defined(_WIN_ALL) && !defined(_MSC_VER) && !defined(__MINGW32__)
     _EBX=_ESP;
 #endif
-    int RetCode=Cmd->ChangeVolProc(NextName,RAR_VOL_NOTIFY);
+    int RetCode=Cmd->ChangeVolProc(NextName, RAR_VOL_NOTIFY);
 #if defined(_WIN_ALL) && !defined(_MSC_VER) && !defined(__MINGW32__)
     _ESP=_EBX;
 #endif
@@ -166,7 +176,7 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 #endif
 
   if (Command=='T' || Command=='X' || Command=='E')
-    mprintf(St(Command=='T' ? MTestVol:MExtrVol),Arc.FileName);
+    mprintf(St(Command=='T' ? MTestVol:MExtrVol), Arc.FileName);
   if (SplitHeader)
     Arc.SearchBlock(HeaderType);
   else
@@ -174,25 +184,25 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
   if (Arc.GetHeaderType()==FILE_HEAD)
   {
     Arc.ConvertAttributes();
-    Arc.Seek(Arc.NextBlockPos-Arc.NewLhd.FullPackSize,SEEK_SET);
+    Arc.Seek(Arc.NextBlockPos-Arc.NewLhd.FullPackSize, SEEK_SET);
   }
 #ifndef GUI
   if (ShowFileName)
   {
     char OutName[NM];
-    IntToExt(Arc.NewLhd.FileName,OutName);
+    IntToExt(Arc.NewLhd.FileName, OutName);
 #ifdef UNICODE_SUPPORTED
     bool WideName=(Arc.NewLhd.Flags & LHD_UNICODE) && UnicodeEnabled();
     if (WideName)
     {
       wchar NameW[NM];
-      ConvertPath(Arc.NewLhd.FileNameW,NameW);
+      ConvertPath(Arc.NewLhd.FileNameW, NameW);
       char Name[NM];
-      if (WideToChar(NameW,Name) && IsNameUsable(Name))
-        strcpy(OutName,Name);
+      if (WideToChar(NameW, Name) && IsNameUsable(Name))
+        strcpy(OutName, Name);
     }
 #endif
-    mprintf(St(MExtrPoints),OutName);
+    mprintf(St(MExtrPoints), OutName);
     if (!Cmd->DisablePercentage)
       mprintf("     ");
   }
@@ -209,14 +219,14 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 #ifdef SFX_MODULE
     DataIO->UnpArcSize=Arc.FileLength();
 #endif
-    
+
     // Reset the size of packed data read from current volume. It is used
     // to display the total progress and preceding volumes are already
     // compensated with ProcessedArcSize, so we need to reset this variable.
     DataIO->CurUnpRead=0;
 
     DataIO->PackedCRC=0xffffffff;
-//    DataIO->SetFiles(&Arc,NULL);
+//    DataIO->SetFiles(&Arc, NULL);
   }
   return(true);
 }
@@ -232,9 +242,9 @@ bool MergeArchive(Archive &Arc,ComprDataIO *DataIO,bool ShowFileName,char Comman
 
 
 #ifndef SILENT
-bool AskNextVol(char *ArcName,wchar *ArcNameW)
+bool AskNextVol(char *ArcName, wchar *ArcNameW)
 {
-  eprintf(St(MAskNextVol),ArcName);
+  eprintf(St(MAskNextVol), ArcName);
   if (Ask(St(MContinueQuit))==2)
     return(false);
   return(true);
