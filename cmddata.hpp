@@ -6,7 +6,8 @@
 #include "timefn.hpp"
 #include "raros.hpp"
 #include "os.hpp"
-//#include "model.hpp"
+#include "match.hpp"
+#include "options.hpp"
 
 #define DefaultStoreList "7z;ace;arj;bz2;cab;gz;jpeg;jpg;lha;lzh;mp3;rar;taz;tgz;z;zip"
 
