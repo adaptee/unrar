@@ -1,6 +1,13 @@
 #ifndef _RAR_CMDDATA_
 #define _RAR_CMDDATA_
 
+#include "rartypes.hpp"
+#include "strlist.hpp"
+#include "timefn.hpp"
+#include "raros.hpp"
+#include "os.hpp"
+#include "model.hpp"
+
 #define DefaultStoreList "7z;ace;arj;bz2;cab;gz;jpeg;jpg;lha;lzh;mp3;rar;taz;tgz;z;zip"
 
 class FileHeader;

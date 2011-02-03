@@ -1,5 +1,18 @@
 #include "rar.hpp"
 
+#include "cmddata.hpp"
+#include "strfn.hpp"
+#include "filefn.hpp"
+#include "pathfn.hpp"
+#include "unicode.hpp"
+#include "scantree.hpp"
+#include "consio.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+#include "options.hpp"
+#include "version.hpp"
+#include "match.hpp"
+
 CommandData::CommandData()
 {
   FileArgs=ExclArgs=InclArgs=StoreArgs=ArcNames=NULL;
@@ -45,7 +58,7 @@ void CommandData::Close()
 
 
 #if !defined(SFX_MODULE)
-void CommandData::ParseArg(char *Arg,wchar *ArgW)
+void CommandData::ParseArg(char *Arg, wchar *ArgW)
 {
   if (IsSwitch(*Arg) && !NoMoreSwitches)
     if (Arg[1]=='-')
@@ -55,9 +68,9 @@ void CommandData::ParseArg(char *Arg,wchar *ArgW)
   else
     if (*Command==0)
     {
-      strncpyz(Command,Arg,ASIZE(Command));
+      strncpyz(Command, Arg, ASIZE(Command));
       if (ArgW!=NULL)
-        wcsncpy(CommandW,ArgW,ASIZE(CommandW));
+        wcsncpy(CommandW, ArgW, ASIZE(CommandW));
 
 
 #ifndef GUI
@@ -72,9 +85,9 @@ void CommandData::ParseArg(char *Arg,wchar *ArgW)
     else
       if (*ArcName==0 && *ArcNameW==0)
       {
-        strncpyz(ArcName,Arg,ASIZE(ArcName));
+        strncpyz(ArcName, Arg, ASIZE(ArcName));
         if (ArgW!=NULL)
-          wcsncpyz(ArcNameW,ArgW,ASIZE(ArcNameW));
+          wcsncpyz(ArcNameW, ArgW, ASIZE(ArcNameW));
       }
       else
       {
@@ -93,22 +106,22 @@ void CommandData::ParseArg(char *Arg,wchar *ArgW)
         }
 
         char CmdChar=etoupper(*Command);
-        bool Add=strchr("AFUM",CmdChar)!=NULL;
+        bool Add=strchr("AFUM", CmdChar)!=NULL;
         bool Extract=CmdChar=='X' || CmdChar=='E';
         if (EndSeparator && !Add)
         {
-          strncpyz(ExtrPath,Arg,ASIZE(ExtrPath));
+          strncpyz(ExtrPath, Arg, ASIZE(ExtrPath));
           if (ArgW!=NULL)
-            wcsncpyz(ExtrPathW,ArgW,ASIZE(ExtrPathW));
+            wcsncpyz(ExtrPathW, ArgW, ASIZE(ExtrPathW));
         }
         else
           if ((Add || CmdChar=='T') && *Arg!='@')
-            FileArgs->AddString(Arg,ArgW);
+            FileArgs->AddString(Arg, ArgW);
           else
           {
             FindData FileData;
-            bool Found=FindFile::FastFind(Arg,ArgW,&FileData);
-            if (!Found && *Arg=='@' && !IsWildcard(Arg,ArgW))
+            bool Found=FindFile::FastFind(Arg, ArgW,&FileData);
+            if (!Found && *Arg=='@' && !IsWildcard(Arg, ArgW))
             {
               FileLists=true;
 
@@ -123,21 +136,21 @@ void CommandData::ParseArg(char *Arg,wchar *ArgW)
 #endif
 
               wchar *WideArgName=(ArgW!=NULL && *ArgW!=0 ? ArgW+1:NULL);
-              ReadTextFile(Arg+1,WideArgName,FileArgs,false,true,Charset,true,true,true);
+              ReadTextFile(Arg+1, WideArgName, FileArgs, false, true, Charset, true, true, true);
             }
             else
               if (Found && FileData.IsDir && Extract && *ExtrPath==0 && *ExtrPathW==0)
               {
-                strncpyz(ExtrPath,Arg,ASIZE(ExtrPath)-1);
+                strncpyz(ExtrPath, Arg, ASIZE(ExtrPath)-1);
                 AddEndSlash(ExtrPath);
                 if (ArgW!=NULL)
                 {
-                  wcsncpyz(ExtrPathW,ArgW,ASIZE(ExtrPathW)-1);
+                  wcsncpyz(ExtrPathW, ArgW, ASIZE(ExtrPathW)-1);
                   AddEndSlash(ExtrPathW);
                 }
               }
               else
-                FileArgs->AddString(Arg,ArgW);
+                FileArgs->AddString(Arg, ArgW);
           }
       }
 }
@@ -170,7 +183,7 @@ void CommandData::ParseEnvVar()
 // Return 'false' if -cfg- is present and preprocess switches
 // which must be processed before the rest of command line.
 #ifndef SFX_MODULE
-bool CommandData::IsConfigEnabled(int argc,char *argv[])
+bool CommandData::IsConfigEnabled(int argc, char *argv[])
 {
   bool ConfigEnabled=true;
   for (int I=1;I<argc;I++)
@@ -181,7 +194,7 @@ bool CommandData::IsConfigEnabled(int argc,char *argv[])
       if (stricomp(&argv[I][1],"cfg-")==0)
         ConfigEnabled=false;
 #ifndef GUI
-      if (strnicomp(&argv[I][1],"ilog",4)==0)
+      if (strnicomp(&argv[I][1],"ilog", 4)==0)
       {
         // Ensure that correct log file name is already set
         // if we need to report an error when processing the command line.
@@ -189,7 +202,7 @@ bool CommandData::IsConfigEnabled(int argc,char *argv[])
         InitLogOptions(LogName);
       }
 #endif
-      if (strnicomp(&argv[I][1],"sc",2)==0)
+      if (strnicomp(&argv[I][1],"sc", 2)==0)
       {
         // Process -sc before reading any file lists.
         ProcessSwitch(&argv[I][1]);
@@ -201,17 +214,17 @@ bool CommandData::IsConfigEnabled(int argc,char *argv[])
 
 
 #if !defined(GUI) && !defined(SFX_MODULE)
-void CommandData::ReadConfig(int argc,char *argv[])
+void CommandData::ReadConfig(int argc, char *argv[])
 {
   StringList List;
-  if (ReadTextFile(DefConfigName,NULL,&List,true))
+  if (ReadTextFile(DefConfigName, NULL,&List, true))
   {
     char *Str;
     while ((Str=List.GetString())!=NULL)
     {
       while (IsSpace(*Str))
         Str++;
-      if (strnicomp(Str,"switches=",9)==0)
+      if (strnicomp(Str,"switches=", 9)==0)
         ProcessSwitchesString(Str+9);
     }
   }
@@ -242,7 +255,7 @@ void CommandData::ProcessSwitchesString(char *Str)
 
 
 #if !defined(SFX_MODULE)
-void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
+void CommandData::ProcessSwitch(char *Switch, wchar *SwitchW)
 {
 
   bool WidePresent=SwitchW!=NULL && *SwitchW!=0; // If 'true', SwitchW is not empty.
@@ -250,9 +263,9 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
   switch(etoupper(Switch[0]))
   {
     case 'I':
-      if (strnicomp(&Switch[1],"LOG",3)==0)
+      if (strnicomp(&Switch[1],"LOG", 3)==0)
       {
-        strncpyz(LogName,Switch[4] ? Switch+4:DefLogName,ASIZE(LogName));
+        strncpyz(LogName, Switch[4] ? Switch+4:DefLogName, ASIZE(LogName));
         break;
       }
       if (stricomp(&Switch[1],"SND")==0)
@@ -265,9 +278,9 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
         MsgStream=MSG_STDERR;
         break;
       }
-      if (strnicomp(&Switch[1],"EML",3)==0)
+      if (strnicomp(&Switch[1],"EML", 3)==0)
       {
-        strncpyz(EmailTo,Switch[4] ? Switch+4:"@",ASIZE(EmailTo));
+        strncpyz(EmailTo, Switch[4] ? Switch+4:"@", ASIZE(EmailTo));
         EmailTo[sizeof(EmailTo)-1]=0;
         break;
       }
@@ -386,9 +399,9 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
           AddArcOnly=true;
           break;
         case 'P':
-          strcpy(ArcPath,Switch+2);
+          strcpy(ArcPath, Switch+2);
           if (WidePresent)
-            wcscpy(ArcPathW,SwitchW+2);
+            wcscpy(ArcPathW, SwitchW+2);
           break;
         case 'S':
           SyncFiles=true;
@@ -497,7 +510,7 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
             Charset=RCH_OEM;
 #endif
 
-          ReadTextFile(Switch+2,NULL,Args,false,true,Charset,true,true,true);
+          ReadTextFile(Switch+2, NULL, Args, false, true, Charset, true, true, true);
         }
         else
           Args->AddString(Switch+1);
@@ -543,12 +556,12 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
     case 'P':
       if (Switch[1]==0)
       {
-        GetPassword(PASSWORD_GLOBAL,NULL,NULL,Password,ASIZE(Password));
+        GetPassword(PASSWORD_GLOBAL, NULL, NULL, Password, ASIZE(Password));
         eprintf("\n");
       }
       else
       {
-        CharToWide(Switch+1,Password,ASIZE(Password));
+        CharToWide(Switch+1, Password, ASIZE(Password));
         Password[ASIZE(Password)-1]=0;
       }
       break;
@@ -558,13 +571,13 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
         EncryptHeaders=true;
         if (Switch[2]!=0)
         {
-          CharToWide(Switch+2,Password,ASIZE(Password));
+          CharToWide(Switch+2, Password, ASIZE(Password));
           Password[ASIZE(Password)-1]=0;
         }
         else
           if (*Password==0)
           {
-            GetPassword(PASSWORD_GLOBAL,NULL,NULL,Password,ASIZE(Password));
+            GetPassword(PASSWORD_GLOBAL, NULL, NULL, Password, ASIZE(Password));
             eprintf("\n");
           }
       }
@@ -575,9 +588,9 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
         // If comment file is not specified, we read data from stdin.
         strcpy(CommentFile,"stdin");
       }
-      strncpyz(CommentFile,Switch+1,ASIZE(CommentFile));
+      strncpyz(CommentFile, Switch+1, ASIZE(CommentFile));
       if (WidePresent)
-        wcsncpyz(CommentFileW,SwitchW+1,ASIZE(CommentFileW));
+        wcsncpyz(CommentFileW, SwitchW+1, ASIZE(CommentFileW));
       break;
     case 'M':
       switch(etoupper(Switch[1]))
@@ -591,7 +604,7 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
             else
               while (*Str)
               {
-                int Param1=0,Param2=0;
+                int Param1=0, Param2=0;
                 FilterState State=FILTER_AUTO;
                 FilterType Type=FILTER_NONE;
                 if (IsDigit(*Str))
@@ -638,10 +651,10 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
           break;
         case 'S':
           {
-            char *Names=Switch+2,DefNames[512];
+            char *Names=Switch+2, DefNames[512];
             if (*Names==0)
             {
-              strcpy(DefNames,DefaultStoreList);
+              strcpy(DefNames, DefaultStoreList);
               Names=DefNames;
             }
             while (*Names!=0)
@@ -653,9 +666,9 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
                 Names++;
               char Mask[NM];
               if (strpbrk(Names,"*?.")==NULL)
-                sprintf(Mask,"*.%s",Names);
+                sprintf(Mask,"*.%s", Names);
               else
-                strcpy(Mask,Names);
+                strcpy(Mask, Names);
               StoreArgs->AddString(Mask);
               if (End==NULL)
                 break;
@@ -771,7 +784,7 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
         BadSwitch(Switch);
       break;
     case 'W':
-      strncpyz(TempPath,&Switch[1],ASIZE(TempPath));
+      strncpyz(TempPath,&Switch[1], ASIZE(TempPath));
       AddEndSlash(TempPath);
       break;
     case 'S':
@@ -893,7 +906,7 @@ void CommandData::ProcessSwitch(char *Switch,wchar *SwitchW)
 #ifndef SFX_MODULE
 void CommandData::BadSwitch(char *Switch)
 {
-  mprintf(St(MUnknownOption),Switch);
+  mprintf(St(MUnknownOption), Switch);
   ErrHandler.Exit(USER_ERROR);
 }
 #endif
@@ -915,11 +928,11 @@ void CommandData::OutTitle()
   char Version[50];
   int Beta=RARVER_BETA;
   if (Beta!=0)
-    sprintf(Version,"%d.%02d %s %d",RARVER_MAJOR,RARVER_MINOR,St(MBeta),RARVER_BETA);
+    sprintf(Version,"%d.%02d %s %d", RARVER_MAJOR, RARVER_MINOR, St(MBeta), RARVER_BETA);
   else
-    sprintf(Version,"%d.%02d",RARVER_MAJOR,RARVER_MINOR);
+    sprintf(Version,"%d.%02d", RARVER_MAJOR, RARVER_MINOR);
 #ifdef UNRAR
-  mprintf(St(MUCopyright),Version,RARVER_YEAR);
+  mprintf(St(MUCopyright), Version, RARVER_YEAR);
 #else
 #endif
 #endif
@@ -928,7 +941,7 @@ void CommandData::OutTitle()
 #endif
 
 
-inline bool CmpMSGID(MSGID i1,MSGID i2)
+inline bool CmpMSGID(MSGID i1, MSGID i2)
 {
 #ifdef MSGID_INT
   return(i1==i2);
@@ -936,7 +949,7 @@ inline bool CmpMSGID(MSGID i1,MSGID i2)
   // If MSGID is const char*, we cannot compare pointers only.
   // Pointers to different instances of same strings can differ,
   // so we need to compare complete strings.
-  return(strcmp(i1,i2)==0);
+  return(strcmp(i1, i2)==0);
 #endif
 }
 
@@ -947,19 +960,19 @@ void CommandData::OutHelp()
   static MSGID Help[]={
 #ifdef SFX_MODULE
     // Console SFX switches definition.
-    MCHelpCmd,MSHelpCmdE,MSHelpCmdT,MSHelpCmdV
+    MCHelpCmd, MSHelpCmdE, MSHelpCmdT, MSHelpCmdV
 #elif defined(UNRAR)
     // UnRAR switches definition.
-    MUNRARTitle1,MRARTitle2,MCHelpCmd,MCHelpCmdE,MCHelpCmdL,
-    MCHelpCmdP,MCHelpCmdT,MCHelpCmdV,MCHelpCmdX,MCHelpSw,
-    MCHelpSwm,MCHelpSwAC,MCHelpSwAD,MCHelpSwAI,MCHelpSwAP,
-    MCHelpSwCm,MCHelpSwCFGm,MCHelpSwCL,MCHelpSwCU,
-    MCHelpSwDH,MCHelpSwEP,MCHelpSwEP3,MCHelpSwF,MCHelpSwIDP,MCHelpSwIERR,
-    MCHelpSwINUL,MCHelpSwIOFF,MCHelpSwKB,MCHelpSwN,MCHelpSwNa,MCHelpSwNal,
-    MCHelpSwO,MCHelpSwOC,MCHelpSwOR,MCHelpSwOW,MCHelpSwP,
-    MCHelpSwPm,MCHelpSwR,MCHelpSwRI,MCHelpSwSL,MCHelpSwSM,MCHelpSwTA,
-    MCHelpSwTB,MCHelpSwTN,MCHelpSwTO,MCHelpSwTS,MCHelpSwU,MCHelpSwVUnr,
-    MCHelpSwVER,MCHelpSwVP,MCHelpSwX,MCHelpSwXa,MCHelpSwXal,MCHelpSwY
+    MUNRARTitle1, MRARTitle2, MCHelpCmd, MCHelpCmdE, MCHelpCmdL,
+    MCHelpCmdP, MCHelpCmdT, MCHelpCmdV, MCHelpCmdX, MCHelpSw,
+    MCHelpSwm, MCHelpSwAC, MCHelpSwAD, MCHelpSwAI, MCHelpSwAP,
+    MCHelpSwCm, MCHelpSwCFGm, MCHelpSwCL, MCHelpSwCU,
+    MCHelpSwDH, MCHelpSwEP, MCHelpSwEP3, MCHelpSwF, MCHelpSwIDP, MCHelpSwIERR,
+    MCHelpSwINUL, MCHelpSwIOFF, MCHelpSwKB, MCHelpSwN, MCHelpSwNa, MCHelpSwNal,
+    MCHelpSwO, MCHelpSwOC, MCHelpSwOR, MCHelpSwOW, MCHelpSwP,
+    MCHelpSwPm, MCHelpSwR, MCHelpSwRI, MCHelpSwSL, MCHelpSwSM, MCHelpSwTA,
+    MCHelpSwTB, MCHelpSwTN, MCHelpSwTO, MCHelpSwTS, MCHelpSwU, MCHelpSwVUnr,
+    MCHelpSwVER, MCHelpSwVP, MCHelpSwX, MCHelpSwXa, MCHelpSwXal, MCHelpSwY
 #else
 #endif
   };
@@ -973,12 +986,12 @@ void CommandData::OutHelp()
 #endif
 #ifndef _WIN_ALL
     static MSGID Win32Only[]={
-      MCHelpSwIEML,MCHelpSwVD,MCHelpSwAO,MCHelpSwOS,MCHelpSwIOFF,
-      MCHelpSwEP2,MCHelpSwOC,MCHelpSwDR,MCHelpSwRI
+      MCHelpSwIEML, MCHelpSwVD, MCHelpSwAO, MCHelpSwOS, MCHelpSwIOFF,
+      MCHelpSwEP2, MCHelpSwOC, MCHelpSwDR, MCHelpSwRI
     };
     bool Found=false;
     for (int J=0;J<sizeof(Win32Only)/sizeof(Win32Only[0]);J++)
-      if (CmpMSGID(Help[I],Win32Only[J]))
+      if (CmpMSGID(Help[I], Win32Only[J]))
       {
         Found=true;
         break;
@@ -987,23 +1000,23 @@ void CommandData::OutHelp()
       continue;
 #endif
 #if !defined(_UNIX) && !defined(_WIN_ALL)
-    if (CmpMSGID(Help[I],MCHelpSwOW))
+    if (CmpMSGID(Help[I], MCHelpSwOW))
       continue;
 #endif
 #if !defined(_WIN_ALL) && !defined(_EMX)
-    if (CmpMSGID(Help[I],MCHelpSwAC))
+    if (CmpMSGID(Help[I], MCHelpSwAC))
       continue;
 #endif
 #ifndef SAVE_LINKS
-    if (CmpMSGID(Help[I],MCHelpSwOL))
+    if (CmpMSGID(Help[I], MCHelpSwOL))
       continue;
 #endif
 #ifndef PACK_SMP
-    if (CmpMSGID(Help[I],MCHelpSwMT))
+    if (CmpMSGID(Help[I], MCHelpSwMT))
       continue;
 #endif
 #ifndef _BEOS
-    if (CmpMSGID(Help[I],MCHelpSwEE))
+    if (CmpMSGID(Help[I], MCHelpSwEE))
     {
 #if defined(_EMX) && !defined(_DJGPP)
       if (_osmode != OS2_MODE)
@@ -1025,26 +1038,26 @@ void CommandData::OutHelp()
 // Return 'true' if we need to exclude the file from processing as result
 // of -x switch. If CheckInclList is true, we also check the file against
 // the include list created with -n switch.
-bool CommandData::ExclCheck(char *CheckName,bool Dir,bool CheckFullPath,bool CheckInclList)
+bool CommandData::ExclCheck(char *CheckName, bool Dir, bool CheckFullPath, bool CheckInclList)
 {
-  if (ExclCheckArgs(ExclArgs,Dir,CheckName,CheckFullPath,MATCH_WILDSUBPATH))
+  if (ExclCheckArgs(ExclArgs, Dir, CheckName, CheckFullPath, MATCH_WILDSUBPATH))
     return(true);
   if (!CheckInclList || InclArgs->ItemsCount()==0)
     return(false);
-  if (ExclCheckArgs(InclArgs,Dir,CheckName,false,MATCH_WILDSUBPATH))
+  if (ExclCheckArgs(InclArgs, Dir, CheckName, false, MATCH_WILDSUBPATH))
     return(false);
   return(true);
 }
 
 
-bool CommandData::ExclCheckArgs(StringList *Args,bool Dir,char *CheckName,bool CheckFullPath,int MatchMode)
+bool CommandData::ExclCheckArgs(StringList *Args, bool Dir, char *CheckName, bool CheckFullPath, int MatchMode)
 {
-  char *Name=ConvertPath(CheckName,NULL);
+  char *Name=ConvertPath(CheckName, NULL);
   char FullName[NM];
   char CurMask[NM+1]; // We reserve the space to append "*" to mask.
   *FullName=0;
   Args->Rewind();
-  while (Args->GetString(CurMask,ASIZE(CurMask)-1))
+  while (Args->GetString(CurMask, ASIZE(CurMask)-1))
   {
     char *LastMaskChar=PointToLastChar(CurMask);
     bool DirMask=IsPathDiv(*LastMaskChar); // Mask for directories only.
@@ -1056,14 +1069,14 @@ bool CommandData::ExclCheckArgs(StringList *Args,bool Dir,char *CheckName,bool C
       {
         // We process the directory and have the directory exclusion mask.
         // So let's convert "mask\" to "mask" and process it normally.
-        
+
         *LastMaskChar=0;
       }
       else
       {
         // If mask has wildcards in name part and does not have the trailing
         // '\' character, we cannot use it for directories.
-      
+
         if (IsWildcard(PointToName(CurMask)))
           continue;
       }
@@ -1090,8 +1103,8 @@ bool CommandData::ExclCheckArgs(StringList *Args,bool Dir,char *CheckName,bool C
       // the comparison, because now all names have the path.
 
       if (*FullName==0)
-        ConvertNameToFull(CheckName,FullName);
-      if (CmpName(CurMask,FullName,MatchMode))
+        ConvertNameToFull(CheckName, FullName);
+      if (CmpName(CurMask, FullName, MatchMode))
         return(true);
     }
     else
@@ -1106,11 +1119,11 @@ bool CommandData::ExclCheckArgs(StringList *Args,bool Dir,char *CheckName,bool C
         // in current directory.
         NewName[0]='.';
         NewName[1]=CPATHDIVIDER;
-        strncpyz(NewName+2,Name,ASIZE(NewName)-2);
+        strncpyz(NewName+2, Name, ASIZE(NewName)-2);
         CurName=NewName;
       }
 
-      if (CmpName(ConvertPath(CurMask,NULL),CurName,MatchMode))
+      if (CmpName(ConvertPath(CurMask, NULL), CurName, MatchMode))
         return(true);
     }
   }
@@ -1167,12 +1180,12 @@ bool CommandData::SizeCheck(int64 Size)
 
 
 
-int CommandData::IsProcessFile(FileHeader &NewLhd,bool *ExactMatch,int MatchType)
+int CommandData::IsProcessFile(FileHeader &NewLhd, bool *ExactMatch, int MatchType)
 {
   if (strlen(NewLhd.FileName)>=NM || wcslen(NewLhd.FileNameW)>=NM)
     return(0);
   bool Dir=(NewLhd.Flags & LHD_WINDOWMASK)==LHD_DIRECTORY;
-  if (ExclCheck(NewLhd.FileName,Dir,false,true))
+  if (ExclCheck(NewLhd.FileName, Dir, false, true))
     return(0);
 #ifndef SFX_MODULE
   if (TimeCheck(NewLhd.mtime))
@@ -1191,34 +1204,34 @@ int CommandData::IsProcessFile(FileHeader &NewLhd,bool *ExactMatch,int MatchType
     bool Unicode=(NewLhd.Flags & LHD_UNICODE) || ArgNameW!=NULL && *ArgNameW!=0;
     if (Unicode)
     {
-      wchar NameW[NM],ArgW[NM],*NamePtr=NewLhd.FileNameW;
+      wchar NameW[NM], ArgW[NM],*NamePtr=NewLhd.FileNameW;
       bool CorrectUnicode=true;
       if (ArgNameW==NULL || *ArgNameW==0)
       {
-        if (!CharToWide(ArgName,ArgW) || *ArgW==0)
+        if (!CharToWide(ArgName, ArgW) || *ArgW==0)
           CorrectUnicode=false;
         ArgNameW=ArgW;
       }
       if ((NewLhd.Flags & LHD_UNICODE)==0)
       {
-        if (!CharToWide(NewLhd.FileName,NameW) || *NameW==0)
+        if (!CharToWide(NewLhd.FileName, NameW) || *NameW==0)
           CorrectUnicode=false;
         NamePtr=NameW;
       }
-      if (CmpName(ArgNameW,NamePtr,MatchType))
+      if (CmpName(ArgNameW, NamePtr, MatchType))
       {
         if (ExactMatch!=NULL)
-          *ExactMatch=wcsicompc(ArgNameW,NamePtr)==0;
+          *ExactMatch=wcsicompc(ArgNameW, NamePtr)==0;
         return(StringCount);
       }
       if (CorrectUnicode)
         continue;
     }
 #endif
-    if (CmpName(ArgName,NewLhd.FileName,MatchType))
+    if (CmpName(ArgName, NewLhd.FileName, MatchType))
     {
       if (ExactMatch!=NULL)
-        *ExactMatch=stricompc(ArgName,NewLhd.FileName)==0;
+        *ExactMatch=stricompc(ArgName, NewLhd.FileName)==0;
       return(StringCount);
     }
   }
@@ -1247,13 +1260,13 @@ void CommandData::ProcessCommand()
   {
     StringList ArcMasks;
     ArcMasks.AddString(ArcName);
-    ScanTree Scan(&ArcMasks,Recurse,SaveLinks,SCAN_SKIPDIRS);
+    ScanTree Scan(&ArcMasks, Recurse, SaveLinks, SCAN_SKIPDIRS);
     FindData FindData;
     while (Scan.GetNext(&FindData)==SCAN_SUCCESS)
-      AddArcName(FindData.Name,FindData.NameW);
+      AddArcName(FindData.Name, FindData.NameW);
   }
   else
-    AddArcName(ArcName,NULL);
+    AddArcName(ArcName, NULL);
 #endif
 
   switch(Command[0])
@@ -1283,15 +1296,15 @@ void CommandData::ProcessCommand()
 #endif
 
 
-void CommandData::AddArcName(const char *Name,const wchar *NameW)
+void CommandData::AddArcName(const char *Name, const wchar *NameW)
 {
-  ArcNames->AddString(Name,NameW);
+  ArcNames->AddString(Name, NameW);
 }
 
 
-bool CommandData::GetArcName(char *Name,wchar *NameW,int MaxSize)
+bool CommandData::GetArcName(char *Name, wchar *NameW, int MaxSize)
 {
-  if (!ArcNames->GetString(Name,NameW,NM))
+  if (!ArcNames->GetString(Name, NameW, NM))
     return(false);
   return(true);
 }
@@ -1311,7 +1324,7 @@ bool CommandData::IsSwitch(int Ch)
 uint CommandData::GetExclAttr(char *Str)
 {
   if (IsDigit(*Str))
-    return(strtol(Str,NULL,0));
+    return(strtol(Str, NULL, 0));
   else
   {
     uint Attr;
@@ -1355,7 +1368,7 @@ uint CommandData::GetExclAttr(char *Str)
 bool CommandData::CheckWinSize()
 {
   static int ValidSize[]={
-    0x10000,0x20000,0x40000,0x80000,0x100000,0x200000,0x400000
+    0x10000, 0x20000, 0x40000, 0x80000, 0x100000, 0x200000, 0x400000
   };
   for (int I=0;I<sizeof(ValidSize)/sizeof(ValidSize[0]);I++)
     if (WinSize==ValidSize[I])
