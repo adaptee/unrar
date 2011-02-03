@@ -1,17 +1,28 @@
-#include "rar.hpp"
-
 #include "cmddata.hpp"
+
+#include "extract.hpp"
+#include "headers.hpp"
+#include "match.hpp"
+#include "compress.hpp"
+#include "find.hpp"
 #include "strfn.hpp"
 #include "filefn.hpp"
+#include "filestr.hpp"
+#include "list.hpp"
 #include "pathfn.hpp"
 #include "unicode.hpp"
 #include "scantree.hpp"
 #include "consio.hpp"
+#include "log.hpp"
+#include "system.hpp"
 #include "resource.hpp"
 #include "loclang.hpp"
 #include "options.hpp"
 #include "version.hpp"
-#include "match.hpp"
+
+#include "errhnd.hpp"
+//FIXME; duplicated info
+extern ErrorHandler ErrHandler;
 
 CommandData::CommandData()
 {
