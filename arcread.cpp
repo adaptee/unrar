@@ -1,8 +1,24 @@
 #include "rar.hpp"
 
+//#include "archive.hpp"
+//#include "system.hpp"
+//#include "unicode.hpp"
+//#include "errhnd.hpp"
+//#include "consio.hpp"
+//#include "strfn.hpp"
+//#include "log.hpp"
+//#include "loclang.hpp"
+//#include "crc.hpp"
+//#include "loclang.hpp"
+//#include "resource.hpp"
+//#include "encname.hpp"
+//#include "rawread.hpp"
+//#include "savepos.hpp"
+//#include "unpack.hpp"
+
 size_t Archive::SearchBlock(int BlockType)
 {
-  size_t Size,Count=0;
+  size_t Size, Count=0;
   while ((Size=ReadHeader())!=0 &&
          (BlockType==ENDARC_HEAD || GetHeaderType()!=ENDARC_HEAD))
   {
@@ -35,7 +51,7 @@ void Archive::UnexpEndArcMsg()
   if (CurBlockPos>ArcSize || NextBlockPos>ArcSize)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MLogUnexpEOF));
+    Log(FileName, St(MLogUnexpEOF));
 #endif
     ErrHandler.SetErrorCode(WARNING);
   }
@@ -60,7 +76,7 @@ size_t Archive::ReadHeader()
 #if defined(SHELL_EXT) || defined(NOCRYPT)
     return(0);
 #else
-    if (Read(HeadersSalt,SALT_SIZE)!=SALT_SIZE)
+    if (Read(HeadersSalt, SALT_SIZE)!=SALT_SIZE)
     {
       UnexpEndArcMsg();
       return(0);
@@ -70,21 +86,21 @@ size_t Archive::ReadHeader()
 #ifdef RARDLL
       char PasswordA[MAXPASSWORD];
       if (Cmd->Callback==NULL ||
-          Cmd->Callback(UCM_NEEDPASSWORD,Cmd->UserData,(LPARAM)PasswordA,ASIZE(PasswordA))==-1)
+          Cmd->Callback(UCM_NEEDPASSWORD, Cmd->UserData,(LPARAM)PasswordA, ASIZE(PasswordA))==-1)
       {
         Close();
         ErrHandler.Exit(USER_BREAK);
       }
-      GetWideName(PasswordA,NULL,Cmd->Password,ASIZE(Cmd->Password));
+      GetWideName(PasswordA, NULL, Cmd->Password, ASIZE(Cmd->Password));
 #else
-      if (!GetPassword(PASSWORD_ARCHIVE,FileName,FileNameW,Cmd->Password,ASIZE(Cmd->Password)))
+      if (!GetPassword(PASSWORD_ARCHIVE, FileName, FileNameW, Cmd->Password, ASIZE(Cmd->Password)))
       {
         Close();
         ErrHandler.Exit(USER_BREAK);
       }
 #endif
     }
-    HeadersCrypt.SetCryptKeys(Cmd->Password,HeadersSalt,false,false,NewMhd.EncryptVer>=36);
+    HeadersCrypt.SetCryptKeys(Cmd->Password, HeadersSalt, false, false, NewMhd.EncryptVer>=36);
     Raw.SetCrypt(&HeadersCrypt);
 #endif
   }
@@ -105,7 +121,7 @@ size_t Archive::ReadHeader()
   if (ShortBlock.HeadSize<SIZEOF_SHORTBLOCKHEAD)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MLogFileHead),"???");
+    Log(FileName, St(MLogFileHead),"???");
 #endif
     BrokenFileHeader=true;
     ErrHandler.SetErrorCode(CRC_ERROR);
@@ -123,7 +139,7 @@ size_t Archive::ReadHeader()
     if (ShortBlock.HeadType==MAIN_HEAD && (ShortBlock.Flags & MHD_COMMENT)!=0)
     {
       // Old style (up to RAR 2.9) main archive comment embedded into
-      // the main archive header found. While we can read the entire 
+      // the main archive header found. While we can read the entire
       // ShortBlock.HeadSize here and remove this part of "if", it would be
       // waste of memory, because we'll read and process this comment data
       // in other function anyway and we do not need them here now.
@@ -169,7 +185,7 @@ size_t Archive::ReadHeader()
           Raw.Get(hd->HighPackSize);
           Raw.Get(hd->HighUnpSize);
         }
-        else 
+        else
         {
           hd->HighPackSize=hd->HighUnpSize=0;
           if (hd->UnpSize==0xffffffff)
@@ -181,15 +197,15 @@ size_t Archive::ReadHeader()
             hd->HighUnpSize=(uint)(INT64NDF>>32);
           }
         }
-        hd->FullPackSize=INT32TO64(hd->HighPackSize,hd->PackSize);
-        hd->FullUnpSize=INT32TO64(hd->HighUnpSize,hd->UnpSize);
+        hd->FullPackSize=INT32TO64(hd->HighPackSize, hd->PackSize);
+        hd->FullUnpSize=INT32TO64(hd->HighUnpSize, hd->UnpSize);
 
         char FileName[NM*4];
-        int NameSize=Min(hd->NameSize,sizeof(FileName)-1);
-        Raw.Get((byte *)FileName,NameSize);
+        int NameSize=Min(hd->NameSize, sizeof(FileName)-1);
+        Raw.Get((byte *)FileName, NameSize);
         FileName[NameSize]=0;
 
-        strncpyz(hd->FileName,FileName,ASIZE(hd->FileName));
+        strncpyz(hd->FileName, FileName, ASIZE(hd->FileName));
 
         if (hd->HeadType==NEWSUB_HEAD)
         {
@@ -203,7 +219,7 @@ size_t Archive::ReadHeader()
             // Here we read optional additional fields for subheaders.
             // They are stored after the file name and before salt.
             hd->SubData.Alloc(DataSize);
-            Raw.Get(&hd->SubData[0],DataSize);
+            Raw.Get(&hd->SubData[0], DataSize);
             if (hd->CmpName(SUBHEAD_TYPE_RR))
             {
               byte *D=&hd->SubData[8];
@@ -220,15 +236,15 @@ size_t Archive::ReadHeader()
               size_t Length=strlen(FileName);
               if (Length==hd->NameSize)
               {
-                UtfToWide(FileName,hd->FileNameW,sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0])-1);
-                WideToChar(hd->FileNameW,hd->FileName,sizeof(hd->FileName)/sizeof(hd->FileName[0])-1);
-                ExtToInt(hd->FileName,hd->FileName);
+                UtfToWide(FileName, hd->FileNameW, sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0])-1);
+                WideToChar(hd->FileNameW, hd->FileName, sizeof(hd->FileName)/sizeof(hd->FileName[0])-1);
+                ExtToInt(hd->FileName, hd->FileName);
               }
               else
               {
                 Length++;
                 NameCoder.Decode(FileName,(byte *)FileName+Length,
-                                 hd->NameSize-Length,hd->FileNameW,
+                                 hd->NameSize-Length, hd->FileNameW,
                                  sizeof(hd->FileNameW)/sizeof(hd->FileNameW[0]));
               }
               if (*hd->FileNameW==0)
@@ -243,7 +259,7 @@ size_t Archive::ReadHeader()
             ConvertUnknownHeader();
           }
         if (hd->Flags & LHD_SALT)
-          Raw.Get(hd->Salt,SALT_SIZE);
+          Raw.Get(hd->Salt, SALT_SIZE);
         hd->mtime.SetDos(hd->FileTime);
         hd->ctime.Reset();
         hd->atime.Reset();
@@ -303,7 +319,7 @@ size_t Archive::ReadHeader()
           if (!EncBroken)
           {
 #ifndef SHELL_EXT
-            Log(Archive::FileName,St(MLogFileHead),IntNameToExt(hd->FileName));
+            Log(Archive::FileName, St(MLogFileHead), IntNameToExt(hd->FileName));
             Alarm();
 #endif
           }
@@ -337,7 +353,7 @@ size_t Archive::ReadHeader()
       Raw.Get(ProtectHead.Version);
       Raw.Get(ProtectHead.RecSectors);
       Raw.Get(ProtectHead.TotalBlocks);
-      Raw.Get(ProtectHead.Mark,8);
+      Raw.Get(ProtectHead.Mark, 8);
       NextBlockPos+=ProtectHead.DataSize;
       RecoverySectors=ProtectHead.RecSectors;
       break;
@@ -357,8 +373,8 @@ size_t Archive::ReadHeader()
             UOHead.OwnerNameSize=NM-1;
           if (UOHead.GroupNameSize>NM-1)
             UOHead.GroupNameSize=NM-1;
-          Raw.Get((byte *)UOHead.OwnerName,UOHead.OwnerNameSize);
-          Raw.Get((byte *)UOHead.GroupName,UOHead.GroupNameSize);
+          Raw.Get((byte *)UOHead.OwnerName, UOHead.OwnerNameSize);
+          Raw.Get((byte *)UOHead.GroupName, UOHead.GroupNameSize);
           UOHead.OwnerName[UOHead.OwnerNameSize]=0;
           UOHead.GroupName[UOHead.GroupNameSize]=0;
           break;
@@ -385,7 +401,7 @@ size_t Archive::ReadHeader()
           Raw.Get(StreamHead.StreamNameSize);
           if (StreamHead.StreamNameSize>NM-1)
             StreamHead.StreamNameSize=NM-1;
-          Raw.Get((byte *)StreamHead.StreamName,StreamHead.StreamNameSize);
+          Raw.Get((byte *)StreamHead.StreamName, StreamHead.StreamNameSize);
           StreamHead.StreamName[StreamHead.StreamNameSize]=0;
           break;
       }
@@ -415,7 +431,7 @@ size_t Archive::ReadHeader()
         // REV files store its own information (volume number, etc.) here.
         SaveFilePos SavePos(*this);
         int64 Length=Tell();
-        Seek(Length-7,SEEK_SET);
+        Seek(Length-7, SEEK_SET);
         Recovered=true;
         for (int J=0;J<7;J++)
           if (GetByte()!=0)
@@ -424,7 +440,7 @@ size_t Archive::ReadHeader()
       if (!Recovered)
       {
 #ifndef SILENT
-        Log(FileName,St(MEncrBadCRC),FileName);
+        Log(FileName, St(MEncrBadCRC), FileName);
 #endif
         Close();
 
@@ -439,7 +455,7 @@ size_t Archive::ReadHeader()
   if (NextBlockPos<=CurBlockPos)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MLogFileHead),"???");
+    Log(FileName, St(MLogFileHead),"???");
 #endif
     BrokenFileHeader=true;
     ErrHandler.SetErrorCode(CRC_ERROR);
@@ -456,7 +472,7 @@ size_t Archive::ReadOldHeader()
   if (CurBlockPos<=(int64)SFXSize)
   {
     Raw.Read(SIZEOF_OLDMHD);
-    Raw.Get(OldMhd.Mark,4);
+    Raw.Get(OldMhd.Mark, 4);
     Raw.Get(OldMhd.HeadSize);
     Raw.Get(OldMhd.Flags);
     NextBlockPos=CurBlockPos+OldMhd.HeadSize;
@@ -493,7 +509,7 @@ size_t Archive::ReadOldHeader()
     NewLhd.arctime.Reset();
 
     Raw.Read(OldLhd.NameSize);
-    Raw.Get((byte *)NewLhd.FileName,OldLhd.NameSize);
+    Raw.Get((byte *)NewLhd.FileName, OldLhd.NameSize);
     NewLhd.FileName[OldLhd.NameSize]=0;
     ConvertNameCase(NewLhd.FileName);
     *NewLhd.FileNameW=0;
@@ -511,15 +527,15 @@ void Archive::ConvertNameCase(char *Name)
 {
   if (Cmd->ConvertNames==NAMES_UPPERCASE)
   {
-    IntToExt(Name,Name);
+    IntToExt(Name, Name);
     strupper(Name);
-    ExtToInt(Name,Name);
+    ExtToInt(Name, Name);
   }
   if (Cmd->ConvertNames==NAMES_LOWERCASE)
   {
-    IntToExt(Name,Name);
+    IntToExt(Name, Name);
     strlower(Name);
-    ExtToInt(Name,Name);
+    ExtToInt(Name, Name);
   }
 }
 
@@ -578,7 +594,7 @@ void Archive::ConvertAttributes()
 
   if (mask == (mode_t) -1)
   {
-    // umask call returns the current umask value. Argument (022) is not 
+    // umask call returns the current umask value. Argument (022) is not
     // important here.
     mask = umask(022);
 
@@ -650,8 +666,8 @@ void Archive::ConvertUnknownHeader()
 #if defined(_WIN_ALL) || defined(_EMX)
     // ':' in file names is allowed in Unix, but not in Windows.
     // Even worse, file data will be written to NTFS stream on NTFS,
-    // so automatic name correction on file create error in extraction 
-    // routine does not work. In Windows and DOS versions we better 
+    // so automatic name correction on file create error in extraction
+    // routine does not work. In Windows and DOS versions we better
     // replace ':' now.
     if (*s==':')
       *s='_';
@@ -667,8 +683,8 @@ void Archive::ConvertUnknownHeader()
 #if defined(_WIN_ALL) || defined(_EMX)
     // ':' in file names is allowed in Unix, but not in Windows.
     // Even worse, file data will be written to NTFS stream on NTFS,
-    // so automatic name correction on file create error in extraction 
-    // routine does not work. In Windows and DOS versions we better 
+    // so automatic name correction on file create error in extraction
+    // routine does not work. In Windows and DOS versions we better
     // replace ':' now.
     if (*s==':')
       *s='_';
@@ -678,12 +694,12 @@ void Archive::ConvertUnknownHeader()
 
 
 #ifndef SHELL_EXT
-bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
+bool Archive::ReadSubData(Array<byte> *UnpData, File *DestFile)
 {
   if (HeaderCRC!=SubHead.HeadCRC)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MSubHeadCorrupt));
+    Log(FileName, St(MSubHeadCorrupt));
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     return(false);
@@ -691,7 +707,7 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
   if (SubHead.Method<0x30 || SubHead.Method>0x35 || SubHead.UnpVer>/*PACK_VER*/36)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MSubHeadUnknown));
+    Log(FileName, St(MSubHeadUnknown));
 #endif
     return(false);
   }
@@ -706,30 +722,30 @@ bool Archive::ReadSubData(Array<byte> *UnpData,File *DestFile)
   if (DestFile==NULL)
   {
     UnpData->Alloc(SubHead.UnpSize);
-    SubDataIO.SetUnpackToMemory(&(*UnpData)[0],SubHead.UnpSize);
+    SubDataIO.SetUnpackToMemory(&(*UnpData)[0], SubHead.UnpSize);
   }
   if (SubHead.Flags & LHD_PASSWORD)
     if (*Cmd->Password!=0)
-      SubDataIO.SetEncryption(SubHead.UnpVer,Cmd->Password,
-             (SubHead.Flags & LHD_SALT) ? SubHead.Salt:NULL,false,
+      SubDataIO.SetEncryption(SubHead.UnpVer, Cmd->Password,
+             (SubHead.Flags & LHD_SALT) ? SubHead.Salt:NULL, false,
              SubHead.UnpVer>=36);
     else
       return(false);
   SubDataIO.SetPackedSizeToRead(SubHead.PackSize);
   SubDataIO.EnableShowProgress(false);
-  SubDataIO.SetFiles(this,DestFile);
+  SubDataIO.SetFiles(this, DestFile);
   SubDataIO.UnpVolume=(SubHead.Flags & LHD_SPLIT_AFTER)!=0;
-  SubDataIO.SetSubHeader(&SubHead,NULL);
+  SubDataIO.SetSubHeader(&SubHead, NULL);
   Unpack.SetDestSize(SubHead.UnpSize);
   if (SubHead.Method==0x30)
-    CmdExtract::UnstoreFile(SubDataIO,SubHead.UnpSize);
+    CmdExtract::UnstoreFile(SubDataIO, SubHead.UnpSize);
   else
-    Unpack.DoUnpack(SubHead.UnpVer,false);
+    Unpack.DoUnpack(SubHead.UnpVer, false);
 
   if (SubHead.FileCRC!=~SubDataIO.UnpFileCRC)
   {
 #ifndef SHELL_EXT
-    Log(FileName,St(MSubHeadDataCRC),SubHead.FileName);
+    Log(FileName, St(MSubHeadDataCRC), SubHead.FileName);
 #endif
     ErrHandler.SetErrorCode(CRC_ERROR);
     if (UnpData!=NULL)
