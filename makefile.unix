@@ -108,7 +108,7 @@ OBJECTS=rar.o strlist.o strfn.o pathfn.o savepos.o smallfn.o file.o filefn.o fil
 	archive.o arcread.o unicode.o system.o isnt.o crypt.o crc.o rawread.o encname.o \
 	resource.o match.o timefn.o rdwrfn.o consio.o log.o options.o ulinks.o errhnd.o rarvm.o \
 	rijndael.o getbits.o sha1.o extinfo.o extract.o volume.o list.o find.o \
-	unpack.o \
+	unpack.o coder.o suballoc.o model.o \
 	cmddata.o
 
 .cpp.o:

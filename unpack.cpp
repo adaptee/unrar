@@ -1,11 +1,12 @@
 #include "unpack.hpp"
-#include "errhnd.hpp"
 
 #include "rdwrfn.hpp"
 
-#include "coder.cpp"
-#include "suballoc.cpp"
-#include "model.cpp"
+#include "coder.hpp"
+#include "suballoc.hpp"
+#include "model.hpp"
+
+#include "errhnd.hpp"
 
 Unpack::Unpack(ComprDataIO *DataIO)
 {
