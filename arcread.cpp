@@ -1,20 +1,22 @@
-#include "rar.hpp"
+#include "archive.hpp"
+#include "extract.hpp"
+#include "system.hpp"
+#include "unicode.hpp"
+#include "consio.hpp"
+#include "strfn.hpp"
+#include "log.hpp"
+#include "loclang.hpp"
+#include "crc.hpp"
+#include "loclang.hpp"
+#include "resource.hpp"
+#include "encname.hpp"
+#include "rawread.hpp"
+#include "savepos.hpp"
+#include "unpack.hpp"
 
-//#include "archive.hpp"
-//#include "system.hpp"
-//#include "unicode.hpp"
-//#include "errhnd.hpp"
-//#include "consio.hpp"
-//#include "strfn.hpp"
-//#include "log.hpp"
-//#include "loclang.hpp"
-//#include "crc.hpp"
-//#include "loclang.hpp"
-//#include "resource.hpp"
-//#include "encname.hpp"
-//#include "rawread.hpp"
-//#include "savepos.hpp"
-//#include "unpack.hpp"
+#include "errhnd.hpp"
+//FIXME; duplicated info
+extern ErrorHandler ErrHandler;
 
 size_t Archive::SearchBlock(int BlockType)
 {
