@@ -1,6 +1,11 @@
 #ifndef _RAR_UNPACK_
 #define _RAR_UNPACK_
 
+#include "rartypes.hpp"
+#include "array.hpp"
+
+
+
 enum BLOCK_TYPES {BLOCK_LZ, BLOCK_PPM};
 
 // Maximum allowed number of compressed bits processed in quick mode.
