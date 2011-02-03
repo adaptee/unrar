@@ -9,9 +9,7 @@
 #include "array.hpp"
 #include "rardefs.hpp"
 
-// FIXME; duplicated info
-class ErrorHandler;
-extern ErrorHandler ErrHandler;
+#include "errhnd.hpp"
 
 static File *CreatedFiles[256];
 static int RemoveCreatedActive=0;

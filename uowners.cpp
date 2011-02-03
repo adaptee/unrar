@@ -6,8 +6,6 @@
 #include "crc.hpp"
 
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 
 void ExtractUnixOwner(Archive &Arc, char *FileName)

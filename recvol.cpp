@@ -18,8 +18,6 @@
 #include "crc.hpp"
 
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 
 // Buffer size for all volumes involved.

@@ -7,8 +7,6 @@
 #include "resource.hpp"
 #include "loclang.hpp"
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 #ifndef GUI
 #include "log.hpp"

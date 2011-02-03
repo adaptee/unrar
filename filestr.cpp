@@ -6,8 +6,6 @@
 #include "unicode.hpp"
 #include "errhnd.hpp"
 
-//FIXME; duplicated info;
-extern ErrorHandler ErrHandler;
 
 static bool IsUnicode(byte *Data, int Size);
 

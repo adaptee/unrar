@@ -7,10 +7,6 @@
 #include "crc.hpp"
 #include "errhnd.hpp"
 
-//FIXME; duplicate info
-extern ErrorHandler ErrHandler;
-
-
 
 bool ExtractLink(ComprDataIO &DataIO, Archive &Arc, const char *LinkName, uint &LinkCRC, bool Create)
 {

@@ -14,8 +14,6 @@
 #include "cmddata.hpp"
 #include "errhnd.hpp"
 
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 
 ScanTree::ScanTree(StringList *FileMasks, RECURSE_MODE Recurse, bool GetLinks, SCAN_DIRS GetDirs)

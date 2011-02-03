@@ -15,8 +15,6 @@
 #include "unpack.hpp"
 
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 size_t Archive::SearchBlock(int BlockType)
 {

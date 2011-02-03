@@ -10,8 +10,6 @@
 #include "unicode.hpp"
 
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 #ifndef SHELL_EXT
 #include "arccmt.cpp"

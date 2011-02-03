@@ -9,9 +9,7 @@
 #include "unicode.hpp"
 #include "resource.hpp"
 
-//FIXME; duplicated info
 #include "errhnd.hpp"
-extern ErrorHandler ErrHandler;
 
 
 bool FileCreate(RAROptions *Cmd, File *NewFile, char *Name, wchar *NameW,

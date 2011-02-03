@@ -11,8 +11,6 @@
 #include "loclang.hpp"
 
 #include "errhnd.hpp"
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
 
 
 FindFile::FindFile()

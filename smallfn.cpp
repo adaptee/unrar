@@ -2,9 +2,6 @@
 #include "crc.hpp"
 #include "errhnd.hpp"
 
-//FIXME; duplicated info
-extern ErrorHandler ErrHandler;
-
 int ToPercent(int64 N1, int64 N2)
 {
   if (N2<N1)
