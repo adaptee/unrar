@@ -68,7 +68,6 @@
 #include "smallfn.hpp"
 #include "ulinks.hpp"
 
-#include "global.hpp"
 
 
 #endif

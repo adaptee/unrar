@@ -6,6 +6,9 @@
 #include "resource.hpp"
 #include "loclang.hpp"
 
+// global instance;
+ErrorHandler ErrHandler;
+
 static bool UserBreak;
 
 ErrorHandler::ErrorHandler()
