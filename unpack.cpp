@@ -1,3 +1,6 @@
+#include "unpack.hpp"
+#include "errhnd.hpp"
+
 #include "rdwrfn.hpp"
 
 #include "coder.cpp"
