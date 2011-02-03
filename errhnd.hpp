@@ -54,5 +54,6 @@ class ErrorHandler
     void SysErrMsg();
 };
 
+extern ErrorHandler ErrHandler;
 
 #endif
