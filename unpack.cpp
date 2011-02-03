@@ -83,7 +83,7 @@ inline void Unpack::InsertLastMatch(unsigned int Length, unsigned int Distance)
 }
 
 
-_forceinline void Unpack::CopyString(uint Length, uint Distance)
+inline void Unpack::CopyString(uint Length, uint Distance)
 {
     uint SrcPtr = UnpPtr - Distance;
     if ( (SrcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
@@ -132,7 +132,7 @@ _forceinline void Unpack::CopyString(uint Length, uint Distance)
 }
 
 
-_forceinline uint Unpack::DecodeNumber(DecodeTable *Dec)
+inline uint Unpack::DecodeNumber(DecodeTable *Dec)
 {
     // Left aligned 15 bit length raw bit field.
     uint BitField = ( getbits() & 0xfffe );

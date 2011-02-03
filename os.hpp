@@ -137,20 +137,11 @@
   #ifdef _MSC_VER
     #define _stdfunction __cdecl
 
-    #ifdef SFX_MODULE
-      // We want to keep SFX module small, so let compiler to decide.
-      #define _forceinline inline
-    #else
-      #define _forceinline __forceinline
-    #endif
-
   #else
     #define _stdfunction _USERENTRY
-    #define _forceinline inline
   #endif
 #else
   #define _stdfunction
-  #define _forceinline inline
 #endif
 
 #endif
@@ -214,7 +205,7 @@
 #define CREATEBINARY "w+"
 #define APPENDTEXT   "a"
 
-#define _stdfunction 
+#define _stdfunction
 #define _forceinline inline
 
 #ifdef _APPLE
