@@ -9,7 +9,7 @@ inline unsigned int RangeCoder::GetChar()
 
 void RangeCoder::InitDecoder(Unpack *UnpackRead)
 {
-  RangeCoder::UnpackRead=UnpackRead;
+  RangeCoder::UnpackRead = UnpackRead;
 
   low=code=0;
   range=uint(-1);
