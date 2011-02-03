@@ -1,3 +1,14 @@
+#include "array.hpp"
+#include "archive.hpp"
+#include "unpack.hpp"
+#include "savepos.hpp"
+#include "resource.hpp"
+#include "loclang.hpp"
+#include "consio.hpp"
+#include "log.hpp"
+#include "crc.hpp"
+#include "unicode.hpp"
+
 bool Archive::GetComment(Array<byte> *CmtData, Array<wchar> *CmtDataW)
 {
   if (!MainComment)
