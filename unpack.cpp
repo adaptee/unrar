@@ -6,8 +6,6 @@
 #include "suballoc.hpp"
 #include "model.hpp"
 
-#include "errhnd.hpp"
-
 Unpack::Unpack(ComprDataIO *DataIO)
 {
     m_io = DataIO;
@@ -39,10 +37,6 @@ void Unpack::Init(byte * Window)
     else
     {
         Unpack::Window = new byte[MAXWINSIZE];
-#ifndef ALLOW_EXCEPTIONS
-        if (Unpack::Window == NULL)
-            ErrHandler.MemoryError();
-#endif
     }
 
     UnpInitData(false);
