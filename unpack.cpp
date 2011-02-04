@@ -184,7 +184,7 @@ int Unpack::SafePPMDecodeChar()
     if (ch == -1 )              // Corrupt PPM data found.
     {
         m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
-        UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
+        m_blocktype = BLOCK_LZ; // Set faster and more fail proof LZ mode.
     }
     return(ch);
 }
@@ -247,7 +247,7 @@ void Unpack::Unpack29(bool Solid)
                 return;
         }
 
-        if (UnpBlockType == BLOCK_PPM)
+        if (m_blocktype == BLOCK_PPM)
         {
             // Here speed is critical, so we do not use SafePPMDecodeChar,
             // because sometimes even the function can introduce
@@ -256,7 +256,7 @@ void Unpack::Unpack29(bool Solid)
             if (Ch == -1)              // Corrupt PPM data found.
             {
                 m_ppm.CleanUp();         // Reset possibly corrupt PPM data structures.
-                UnpBlockType = BLOCK_LZ; // Set faster and more fail proof LZ mode.
+                m_blocktype = BLOCK_LZ; // Set faster and more fail proof LZ mode.
                 break;
             }
 
@@ -941,11 +941,11 @@ bool Unpack::ReadTables()
 
     if (BitField & 0x8000)
     {
-        UnpBlockType = BLOCK_PPM;
+        m_blocktype = BLOCK_PPM;
         return(m_ppm.DecodeInit(this, PPMEscChar));
     }
 
-    UnpBlockType    = BLOCK_LZ;
+    m_blocktype    = BLOCK_LZ;
     PrevLowDist     = 0;
     LowDistRepCount = 0;
 
@@ -1072,7 +1072,7 @@ void Unpack::UnpInitData(int Solid)
 
         UnpPtr=WrPtr=0;
         PPMEscChar = 2;
-        UnpBlockType = BLOCK_LZ;
+        m_blocktype = BLOCK_LZ;
 
         ResetFilters();
     }

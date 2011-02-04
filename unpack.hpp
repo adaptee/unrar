@@ -150,7 +150,7 @@ private:
 
     unsigned char UnpOldTable[HUFF_TABLE_SIZE];
 
-    int UnpBlockType;
+    int m_blocktype;
 
     byte *Window;
     bool m_useExternalWindow;
