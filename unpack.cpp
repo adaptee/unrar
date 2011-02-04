@@ -197,6 +197,7 @@ void Unpack::Unpack29(bool Solid)
     static int DBitLengthCounts[]= {4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 14, 0, 12};
     static unsigned char SDDecode[]={0, 4, 8, 16, 32, 64, 128, 192};
     static unsigned char SDBits[]=  {2, 2, 3, 4, 5, 6, 6, 6};
+
     unsigned int Bits;
 
     if (DDecode[1] == 0)
