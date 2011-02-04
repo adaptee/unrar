@@ -230,7 +230,7 @@ void Unpack::Unpack29(bool Solid)
     {
         UnpPtr &= MAXWINMASK;
 
-        if (InAddr > ReadBorder)
+        if (InAddr > m_readborder)
         {
             if (!UnpReadBuf())
                 break;
@@ -503,7 +503,7 @@ bool Unpack::ReadVMCode()
     {
         // Try to read the new buffer if only one byte is left.
         // But if we read all bytes except the last, one byte is enough.
-        if ( (InAddr >= ReadTop-1) &&
+        if ( (InAddr >= m_readtop-1) &&
              (!UnpReadBuf()) &&
              (i < (Length-1))  )
             return false;
@@ -718,7 +718,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
 
 bool Unpack::UnpReadBuf()
 {
-    int DataSize = ReadTop - InAddr; // Data left to process.
+    int DataSize = m_readtop - InAddr; // Data left to process.
     if (DataSize < 0)
         return false;
 
@@ -729,19 +729,19 @@ bool Unpack::UnpReadBuf()
         if (DataSize > 0)
             memmove(InBuf, InBuf+InAddr, DataSize);
         InAddr  = 0;
-        ReadTop = DataSize;
+        m_readtop = DataSize;
     }
     else
     {
-        DataSize = ReadTop;
+        DataSize = m_readtop;
     }
 
     int ReadCode = m_io->UnpRead(InBuf+DataSize, (BitInput::MAX_SIZE-DataSize) & ~0xf);
 
     if (ReadCode > 0)
-        ReadTop += ReadCode;
+        m_readtop += ReadCode;
 
-    ReadBorder = ReadTop-30;
+    m_readborder = m_readtop-30;
 
     return (ReadCode != -1);
 }
@@ -932,7 +932,7 @@ bool Unpack::ReadTables()
     byte BitLength[BC];
     byte Table[HUFF_TABLE_SIZE];
 
-    if (InAddr > ReadTop-25)
+    if (InAddr > m_readtop-25)
         if (!UnpReadBuf())
             return false;
 
@@ -987,7 +987,7 @@ bool Unpack::ReadTables()
     const int TableSize = HUFF_TABLE_SIZE;
     for (int i=0;i<TableSize;)
     {
-        if (InAddr > ReadTop-5)
+        if (InAddr > m_readtop-5)
             if (!UnpReadBuf())
                 return false;
 
@@ -1040,7 +1040,7 @@ bool Unpack::ReadTables()
     }
 
     TablesRead = true;
-    if (InAddr > ReadTop)
+    if (InAddr > m_readtop)
         return false;
 
     MakeDecodeTables(&Table[0], &LD, NC);
@@ -1079,8 +1079,8 @@ void Unpack::UnpInitData(int Solid)
 
     InitBitInput();
     WrittenFileSize = 0;
-    ReadTop         = 0;
-    ReadBorder      = 0;
+    m_readtop       = 0;
+    m_readborder    = 0;
 
 }
 

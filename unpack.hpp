@@ -141,12 +141,12 @@ private:
     unsigned int UnpPtr, WrPtr;
 
     // Top border of read packed data.
-    int ReadTop;
+    int m_readtop;
 
-    // Border to call UnpReadBuf. We use it instead of (ReadTop-C)
+    // Border to call UnpReadBuf. We use it instead of (m_readtop-C)
     // for optimization reasons. Ensures that we have C bytes in buffer
     // unless we are at the end of file.
-    int ReadBorder;
+    int m_readborder;
 
     unsigned char UnpOldTable[HUFF_TABLE_SIZE];
 
