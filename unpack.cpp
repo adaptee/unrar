@@ -10,7 +10,7 @@ Unpack::Unpack(ComprDataIO *DataIO)
 {
     m_io = DataIO;
 
-    Window = NULL;
+    m_window = NULL;
     m_useExternalWindow = false;
 
 }
@@ -19,26 +19,25 @@ Unpack::Unpack(ComprDataIO *DataIO)
 Unpack::~Unpack()
 {
     if ( !m_useExternalWindow)
-        delete[] Window;
+        delete[] m_window;
 
     ResetFilters();
 }
 
 
-void Unpack::Init(byte * Window)
+void Unpack::Init(byte * window)
 {
-    if (Window)
+    if (m_window)
     {
-        Unpack::Window      = Window;
+        m_window            = window;
         m_useExternalWindow = true;
     }
     else
     {
-        Unpack::Window = new byte[MAXWINSIZE];
+        Unpack::m_window = new byte[MAXWINSIZE];
     }
 
     UnpInitData(false);
-
 }
 
 
@@ -65,10 +64,10 @@ void Unpack::DoUnpack(int Method, bool Solid)
 
 void Unpack::InsertOldDist(unsigned int distance)
 {
-    OldDist[3] = OldDist[2];
-    OldDist[2] = OldDist[1];
-    OldDist[1] = OldDist[0];
-    OldDist[0] = distance;
+    m_oldDistances[3] = m_oldDistances[2];
+    m_oldDistances[2] = m_oldDistances[1];
+    m_oldDistances[1] = m_oldDistances[0];
+    m_oldDistances[0] = distance;
 }
 
 
@@ -81,17 +80,17 @@ void Unpack::InsertLastMatch(unsigned int length, unsigned int distance)
 
 void Unpack::CopyString(uint Length, uint Distance)
 {
-    uint SrcPtr = UnpPtr - Distance;
+    uint SrcPtr = m_unpackPtr - Distance;
     if ( (SrcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
-         (UnpPtr < (MAXWINSIZE - MAX_LZ_MATCH))
+         (m_unpackPtr < (MAXWINSIZE - MAX_LZ_MATCH))
        )
     {
         // If we are not close to end of window, we do not need to waste time
         // to "& MAXWINMASK" pointer protection.
 
-        byte *Src  = Window + SrcPtr;
-        byte *Dest = Window + UnpPtr;
-        UnpPtr += Length;
+        byte *Src  = m_window + SrcPtr;
+        byte *Dest = m_window + m_unpackPtr;
+        m_unpackPtr += Length;
 
         while (Length >= 8)
         {
@@ -122,8 +121,8 @@ void Unpack::CopyString(uint Length, uint Distance)
     else
         while (Length--) // Slow copying with all possible precautions.
         {
-            Window[UnpPtr] = Window[SrcPtr++ & MAXWINMASK];
-            UnpPtr = (UnpPtr+1) & MAXWINMASK;
+            m_window[m_unpackPtr] = m_window[SrcPtr++ & MAXWINMASK];
+            m_unpackPtr = (m_unpackPtr+1) & MAXWINMASK;
         }
 }
 
@@ -227,7 +226,7 @@ void Unpack::Unpack29(bool Solid)
 
     while (true)
     {
-        UnpPtr &= MAXWINMASK;
+        m_unpackPtr &= MAXWINMASK;
 
         if (InAddr > m_readborder)
         {
@@ -235,8 +234,8 @@ void Unpack::Unpack29(bool Solid)
                 break;
         }
 
-        if ((   ((WrPtr-UnpPtr) & MAXWINMASK) < 260) &&
-                (WrPtr != UnpPtr) )
+        if ((   ((m_writePtr-m_unpackPtr) & MAXWINMASK) < 260) &&
+                (m_writePtr != m_unpackPtr) )
         {
             UnpWriteBuf();
             if (m_writtenSize > m_destUnpSize)
@@ -259,7 +258,7 @@ void Unpack::Unpack29(bool Solid)
                 break;
             }
 
-            if (Ch == PPMEscChar)
+            if (Ch == m_EscCharOfPPM)
             {
                 int NextCh = SafePPMDecodeChar();
                 if (NextCh == 0)  // End of PPM encoding.
@@ -319,11 +318,11 @@ void Unpack::Unpack29(bool Solid)
                     continue;
                 }
                 // If we are here, NextCh must be 1, what means that current byte
-                // is equal to our 'escape' byte, so we just store it to Window.
+                // is equal to our 'escape' byte, so we just store it to m_window.
 
-            } // end of `if (Ch == PPMEscChar)`
+            } // end of `if (Ch == m_EscCharOfPPM)`
 
-            Window[UnpPtr++] = Ch;
+            m_window[m_unpackPtr++] = Ch;
             continue;
         }
 
@@ -331,7 +330,7 @@ void Unpack::Unpack29(bool Solid)
 
         if (Number < 256)
         {
-            Window[UnpPtr++] = (byte)Number;
+            m_window[m_unpackPtr++] = (byte)Number;
             continue;
         }
 
@@ -422,12 +421,12 @@ void Unpack::Unpack29(bool Solid)
         if (Number < 263)
         {
             int DistNum           = Number - 259;
-            unsigned int Distance = OldDist[DistNum];
+            unsigned int Distance = m_oldDistances[DistNum];
 
             for (int i=DistNum;i>0;i--)
-                OldDist[i] = OldDist[i-1];
+                m_oldDistances[i] = m_oldDistances[i-1];
 
-            OldDist[0] = Distance;
+            m_oldDistances[0] = Distance;
 
             int LengthNumber = DecodeNumber(&RD);
             int Length       = LDecode[LengthNumber]+2;
@@ -626,15 +625,15 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     uint BlockStart = RarVM::ReadData(Inp);
     if (FirstByte & 0x40)
         BlockStart += 258;
-    StackFilter->BlockStart = (BlockStart + UnpPtr) & MAXWINMASK;
+    StackFilter->BlockStart = (BlockStart + m_unpackPtr) & MAXWINMASK;
 
     if (FirstByte & 0x20)
         StackFilter->BlockLength = RarVM::ReadData(Inp);
     else
         StackFilter->BlockLength = FiltPos < OldFilterLengths.Size() ? OldFilterLengths[FiltPos] : 0;
-    StackFilter->NextWindow = (WrPtr != UnpPtr) && ((WrPtr-UnpPtr) & MAXWINMASK) <= BlockStart;
+    StackFilter->NextWindow = (m_writePtr != m_unpackPtr) && ((m_writePtr-m_unpackPtr) & MAXWINMASK) <= BlockStart;
 
-    //  DebugLog("\nNextWindow: UnpPtr=%08x WrPtr=%08x BlockStart=%08x", UnpPtr, WrPtr, BlockStart);
+    //  DebugLog("\nNextWindow: m_unpackPtr=%08x m_writePtr=%08x BlockStart=%08x", m_unpackPtr, m_writePtr, BlockStart);
 
     OldFilterLengths[FiltPos] = StackFilter->BlockLength;
 
@@ -748,13 +747,13 @@ bool Unpack::UnpReadBuf()
 
 void Unpack::UnpWriteBuf()
 {
-    unsigned int WrittenBorder = WrPtr;
-    unsigned int WriteSize     = (UnpPtr - WrittenBorder) & MAXWINMASK;
+    unsigned int WrittenBorder = m_writePtr;
+    unsigned int WriteSize     = (m_unpackPtr - WrittenBorder) & MAXWINMASK;
     for (size_t i=0;i<PrgStack.Size();i++)
     {
         // Here we apply filters to data which we need to write.
         // We always copy data to virtual machine memory before processing.
-        // We cannot process them just in place in Window buffer, because
+        // We cannot process them just in place in m_window buffer, because
         // these data can be used for future string matches, so we must
         // preserve them in original form.
 
@@ -774,18 +773,18 @@ void Unpack::UnpWriteBuf()
             {
                 UnpWriteArea(WrittenBorder, BlockStart);
                 WrittenBorder = BlockStart;
-                WriteSize     = (UnpPtr - WrittenBorder) & MAXWINMASK;
+                WriteSize     = (m_unpackPtr - WrittenBorder) & MAXWINMASK;
             }
             if (BlockLength <= WriteSize)
             {
                 unsigned int BlockEnd = (BlockStart + BlockLength) & MAXWINMASK;
                 if (BlockStart < BlockEnd || BlockEnd == 0)
-                    m_vm.SetMemory(0, Window+BlockStart, BlockLength);
+                    m_vm.SetMemory(0, m_window+BlockStart, BlockLength);
                 else
                 {
                     unsigned int FirstPartLength = MAXWINSIZE - BlockStart;
-                    m_vm.SetMemory(0, Window+BlockStart, FirstPartLength);
-                    m_vm.SetMemory(FirstPartLength, Window, BlockEnd);
+                    m_vm.SetMemory(0, m_window+BlockStart, FirstPartLength);
+                    m_vm.SetMemory(FirstPartLength, m_window, BlockEnd);
                 }
 
                 VM_PreparedProgram *ParentPrg = &Filters[flt->ParentFilter]->Prg;
@@ -862,7 +861,7 @@ void Unpack::UnpWriteBuf()
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
                 m_writtenSize += FilteredDataSize;
                 WrittenBorder = BlockEnd;
-                WriteSize     = (UnpPtr-WrittenBorder)&MAXWINMASK;
+                WriteSize     = (m_unpackPtr-WrittenBorder)&MAXWINMASK;
             }
             else
             {
@@ -872,14 +871,14 @@ void Unpack::UnpWriteBuf()
                     if (flt!=NULL && flt->NextWindow)
                         flt->NextWindow=false;
                 }
-                WrPtr = WrittenBorder;
+                m_writePtr = WrittenBorder;
                 return;
             }
         }
     }
 
-    UnpWriteArea(WrittenBorder, UnpPtr);
-    WrPtr = UnpPtr;
+    UnpWriteArea(WrittenBorder, m_unpackPtr);
+    m_writePtr = m_unpackPtr;
 }
 
 
@@ -899,12 +898,12 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 {
     if (EndPtr < StartPtr)
     {
-        UnpWriteData(&Window[StartPtr], -(int)StartPtr & MAXWINMASK);
-        UnpWriteData(Window, EndPtr);
+        UnpWriteData(&m_window[StartPtr], -(int)StartPtr & MAXWINMASK);
+        UnpWriteData(m_window, EndPtr);
     }
     else
     {
-        UnpWriteData(&Window[StartPtr], EndPtr-StartPtr);
+        UnpWriteData(&m_window[StartPtr], EndPtr-StartPtr);
     }
 }
 
@@ -939,7 +938,7 @@ bool Unpack::ReadTables()
     if (BitField & 0x8000)
     {
         m_blocktype = BLOCK_PPM;
-        return(m_ppm.DecodeInit(this, PPMEscChar));
+        return(m_ppm.DecodeInit(this, m_EscCharOfPPM));
     }
 
     m_blocktype              = BLOCK_LZ;
@@ -947,7 +946,7 @@ bool Unpack::ReadTables()
     m_lowDistanceRepeatCount = 0;
 
     if (!(BitField & 0x4000))
-        memset(UnpOldTable, 0, sizeof(UnpOldTable));
+        memset(m_oldUnpackTable, 0, sizeof(m_oldUnpackTable));
 
     faddbits(2);
 
@@ -991,7 +990,7 @@ bool Unpack::ReadTables()
         int Number = DecodeNumber(&BD);
         if (Number < 16)
         {
-            Table[i] = (Number + UnpOldTable[i]) & 0xf;
+            Table[i] = (Number + m_oldUnpackTable[i]) & 0xf;
             i++;
         }
         else
@@ -1044,7 +1043,7 @@ bool Unpack::ReadTables()
     MakeDecodeTables(&Table[NC], &DD, DC);
     MakeDecodeTables(&Table[NC+DC], &LDD, LDC);
     MakeDecodeTables(&Table[NC+DC+LDC], &RD, RC);
-    memcpy(UnpOldTable, Table, sizeof(UnpOldTable));
+    memcpy(m_oldUnpackTable, Table, sizeof(m_oldUnpackTable));
 
     return true;
 }
@@ -1055,20 +1054,20 @@ void Unpack::UnpInitData(int Solid)
     if (!Solid)
     {
         m_hasReadTables = false;
-        memset(OldDist, 0, sizeof(OldDist));
-        OldDistPtr = 0;
+        memset(m_oldDistances, 0, sizeof(m_oldDistances));
+        m_oldDistancePtr = 0;
         m_lastDistance = m_lastLength = 0;
 
-        //    memset(Window, 0, MAXWINSIZE);
-        memset(UnpOldTable, 0, sizeof(UnpOldTable));
+        //    memset(m_window, 0, MAXWINSIZE);
+        memset(m_oldUnpackTable, 0, sizeof(m_oldUnpackTable));
         memset(&LD, 0, sizeof(LD));
         memset(&DD, 0, sizeof(DD));
         memset(&LDD, 0, sizeof(LDD));
         memset(&RD, 0, sizeof(RD));
         memset(&BD, 0, sizeof(BD));
 
-        UnpPtr=WrPtr=0;
-        PPMEscChar = 2;
+        m_unpackPtr = m_writePtr = 0;
+        m_EscCharOfPPM = 2;
         m_blocktype = BLOCK_LZ;
 
         ResetFilters();

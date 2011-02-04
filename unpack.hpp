@@ -110,8 +110,9 @@ private:
     void ResetFilters();
 
     ComprDataIO * m_io;
+
     ModelPPM m_ppm;
-    int PPMEscChar;
+    int m_EscCharOfPPM;
 
     RarVM m_vm;
 
@@ -134,13 +135,14 @@ private:
     DecodeTable RD;  // Decode repeating distances.
     DecodeTable BD;  // Decod bit lengths in Huffman table.
 
-    unsigned int OldDist[4];
-    unsigned int OldDistPtr;
+    unsigned int m_oldDistances[4];
+    unsigned int m_oldDistancePtr;
 
     unsigned int m_lastDistance;
     unsigned int m_lastLength;
 
-    unsigned int UnpPtr, WrPtr;
+    unsigned int m_unpackPtr;
+    unsigned int m_writePtr;
 
     // Top border of read packed data.
     int m_readtop;
@@ -150,11 +152,11 @@ private:
     // unless we are at the end of file.
     int m_readborder;
 
-    unsigned char UnpOldTable[HUFF_TABLE_SIZE];
+    unsigned char m_oldUnpackTable[HUFF_TABLE_SIZE];
 
     int m_blocktype;
 
-    byte *Window;
+    byte * m_window;
     bool m_useExternalWindow;
 
 
