@@ -238,7 +238,7 @@ void Unpack::Unpack29(bool Solid)
                 (WrPtr != UnpPtr) )
         {
             UnpWriteBuf();
-            if (m_writtenSize > DestUnpSize)
+            if (m_writtenSize > m_destUnpSize)
                 return;
             else
                 m_hasExtractFile = false;
@@ -910,11 +910,11 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 
 void Unpack::UnpWriteData(byte *Data, size_t Size)
 {
-    if (m_writtenSize >= DestUnpSize)
+    if (m_writtenSize >= m_destUnpSize)
         return;
 
     size_t WriteSize = Size;
-    int64 LeftToWrite = DestUnpSize - m_writtenSize;
+    int64 LeftToWrite = m_destUnpSize - m_writtenSize;
     if ((int64)WriteSize > LeftToWrite)
         WriteSize = (size_t)LeftToWrite;
 
@@ -1086,7 +1086,7 @@ void Unpack::ResetFilters()
     OldFilterLengths.Reset();
     m_lastfilter = 0;
 
-    for (size_t i=0;i<Filters.Size();i++)
+    for (size_t i=0; i < Filters.Size(); i++)
         delete Filters[i];
     Filters.Reset();
 

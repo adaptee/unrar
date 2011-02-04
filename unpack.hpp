@@ -75,7 +75,7 @@ public:
     ~Unpack();
     void Init(byte *Window=NULL);
     void DoUnpack(int Method, bool Solid);
-    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;m_hasExtractFile=false;}
+    void SetDestSize(int64 DestSize) {m_destUnpSize=DestSize;m_hasExtractFile=false;}
 
     unsigned int GetChar()
     {
@@ -158,7 +158,7 @@ private:
     bool m_useExternalWindow;
 
 
-    int64 DestUnpSize;
+    int64 m_destUnpSize;
 
     int64 m_writtenSize;
 
