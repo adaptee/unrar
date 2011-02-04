@@ -75,7 +75,7 @@ public:
     ~Unpack();
     void Init(byte *Window=NULL);
     void DoUnpack(int Method, bool Solid);
-    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;m_isFileExtracted=false;}
+    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;m_hasExtractFile=false;}
 
     unsigned int GetChar()
     {
@@ -127,7 +127,6 @@ private:
 
     int m_lastfilter;
 
-    bool TablesRead;
 
     DecodeTable LD;  // Decode literals.
     DecodeTable DD;  // Decode distances.
@@ -161,7 +160,9 @@ private:
     bool UnpAllBuf;
     bool UnpSomeRead;
     int64 WrittenFileSize;
-    bool m_isFileExtracted;
+
+    bool m_hasReadTables;
+    bool m_hasExtractFile;
 
     int PrevLowDist, LowDistRepCount;
 

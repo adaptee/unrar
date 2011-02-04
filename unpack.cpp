@@ -212,14 +212,14 @@ void Unpack::Unpack29(bool Solid)
             }
     }
 
-    m_isFileExtracted = true;
+    m_hasExtractFile = true;
 
     UnpInitData(Solid);
 
     if (!UnpReadBuf())
         return;
 
-    if ((!Solid || !TablesRead))
+    if ((!Solid || !m_hasReadTables))
     {
         bool ok = ReadTables();
         if( ! ok )
@@ -243,7 +243,7 @@ void Unpack::Unpack29(bool Solid)
             if (WrittenFileSize > DestUnpSize)
                 return;
             else
-                m_isFileExtracted = false;
+                m_hasExtractFile = false;
                 return;
         }
 
@@ -476,7 +476,7 @@ bool Unpack::ReadEndOfBlock()
         addbits(2);
     }
 
-    TablesRead = !NewTable;
+    m_hasReadTables = !NewTable;
     return !(NewFile || NewTable && !ReadTables());
 }
 
@@ -908,7 +908,9 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
         UnpAllBuf = true;
     }
     else
+    {
         UnpWriteData(&Window[StartPtr], EndPtr-StartPtr);
+    }
 }
 
 
@@ -1039,7 +1041,7 @@ bool Unpack::ReadTables()
         }
     }
 
-    TablesRead = true;
+    m_hasReadTables = true;
     if (InAddr > m_readtop)
         return false;
 
@@ -1057,7 +1059,7 @@ void Unpack::UnpInitData(int Solid)
 {
     if (!Solid)
     {
-        TablesRead = false;
+        m_hasReadTables = false;
         memset(OldDist, 0, sizeof(OldDist));
         OldDistPtr = 0;
         LastDist=LastLength=0;
