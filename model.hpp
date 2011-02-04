@@ -10,7 +10,7 @@
 const int MAX_O=64;                   /* maximum allowed model order */
 
 const int INT_BITS=7, PERIOD_BITS=7, TOT_BITS=INT_BITS+PERIOD_BITS,
-          INTERVAL=1 << INT_BITS, BIN_SCALE=1 << TOT_BITS, MAX_FREQ=124;
+      INTERVAL=1 << INT_BITS, BIN_SCALE=1 << TOT_BITS, MAX_FREQ=124;
 
 #ifndef STRICT_ALIGNMENT_REQUIRED
 #pragma pack(1)
@@ -18,27 +18,27 @@ const int INT_BITS=7, PERIOD_BITS=7, TOT_BITS=INT_BITS+PERIOD_BITS,
 
 struct SEE2_CONTEXT
 { // SEE-contexts for PPM-contexts with masked symbols
-  ushort Summ;
-  byte Shift, Count;
-  void init(int InitVal)
-  {
-    Summ=InitVal << (Shift=PERIOD_BITS-4);
-    Count=4;
-  }
-  uint getMean()
-  {
-    uint RetVal=SHORT16(Summ) >> Shift;
-    Summ -= RetVal;
-    return RetVal+(RetVal == 0);
-  }
-  void update()
-  {
-    if (Shift < PERIOD_BITS && --Count == 0)
+    ushort Summ;
+    byte Shift, Count;
+    void init(int InitVal)
     {
-      Summ += Summ;
-      Count=3 << Shift++;
+        Summ=InitVal << (Shift=PERIOD_BITS-4);
+        Count=4;
     }
-  }
+    uint getMean()
+    {
+        uint RetVal=SHORT16(Summ) >> Shift;
+        Summ -= RetVal;
+        return RetVal+(RetVal == 0);
+    }
+    void update()
+    {
+        if (Shift < PERIOD_BITS && --Count == 0)
+        {
+            Summ += Summ;
+            Count=3 << Shift++;
+        }
+    }
 };
 
 
@@ -47,15 +47,15 @@ struct PPM_CONTEXT;
 
 struct STATE
 {
-  byte Symbol;
-  byte Freq;
-  PPM_CONTEXT* Successor;
+    byte Symbol;
+    byte Freq;
+    PPM_CONTEXT* Successor;
 };
 
 struct FreqData
 {
-  ushort SummFreq;
-  STATE _PACK_ATTR * Stats;
+    ushort SummFreq;
+    STATE _PACK_ATTR * Stats;
 };
 
 struct PPM_CONTEXT
@@ -63,8 +63,8 @@ struct PPM_CONTEXT
     ushort NumStats;
     union
     {
-      FreqData U;
-      STATE OneState;
+        FreqData U;
+        STATE OneState;
     };
 
     PPM_CONTEXT* Suffix;
@@ -93,10 +93,10 @@ const uint UNIT_SIZE=Max(sizeof(PPM_CONTEXT), sizeof(RAR_MEM_BLK));
 const uint FIXED_UNIT_SIZE=12;
 
 /*
-PPM_CONTEXT::PPM_CONTEXT(STATE* pStats, PPM_CONTEXT* ShorterContext):
-        NumStats(1), Suffix(ShorterContext) { pStats->Successor=this; }
-PPM_CONTEXT::PPM_CONTEXT(): NumStats(0) {}
-*/
+   PPM_CONTEXT::PPM_CONTEXT(STATE* pStats, PPM_CONTEXT* ShorterContext):
+   NumStats(1), Suffix(ShorterContext) { pStats->Successor=this; }
+   PPM_CONTEXT::PPM_CONTEXT(): NumStats(0) {}
+   */
 
 template <class T>
 void _PPMD_SWAP(T& t1, T& t2) { T tmp=t1; t1=t2; t2=tmp; }
@@ -104,7 +104,7 @@ void _PPMD_SWAP(T& t1, T& t2) { T tmp=t1; t1=t2; t2=tmp; }
 
 class ModelPPM
 {
-  private:
+private:
     friend struct PPM_CONTEXT;
 
     SEE2_CONTEXT SEE2Cont[25][16], DummySEE2Cont;
@@ -125,7 +125,7 @@ class ModelPPM
 
     void UpdateModel();
     void ClearMask();
-  public:
+public:
     ModelPPM();
     void CleanUp(); // reset PPM variables after data error
     bool DecodeInit(Unpack *UnpackRead, int &EscChar);
