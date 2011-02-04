@@ -135,7 +135,9 @@ private:
     DecodeTable BD;  // Decod bit lengths in Huffman table.
 
     unsigned int OldDist[4], OldDistPtr;
-    unsigned int LastDist, LastLength;
+
+    unsigned int m_lastDistance;
+    unsigned int m_lastLength;
 
     unsigned int UnpPtr, WrPtr;
 

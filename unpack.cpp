@@ -74,8 +74,8 @@ void Unpack::InsertOldDist(unsigned int distance)
 
 void Unpack::InsertLastMatch(unsigned int length, unsigned int distance)
 {
-    LastDist   = distance;
-    LastLength = length;
+    m_lastDistance   = distance;
+    m_lastLength = length;
 }
 
 
@@ -413,8 +413,8 @@ void Unpack::Unpack29(bool Solid)
 
         if (Number == 258)
         {
-            if (LastLength != 0)
-                CopyString(LastLength, LastDist);
+            if (m_lastLength != 0)
+                CopyString(m_lastLength, m_lastDistance);
             continue;
         }
 
@@ -1056,7 +1056,7 @@ void Unpack::UnpInitData(int Solid)
         m_hasReadTables = false;
         memset(OldDist, 0, sizeof(OldDist));
         OldDistPtr = 0;
-        LastDist=LastLength=0;
+        m_lastDistance = m_lastLength = 0;
 
         //    memset(Window, 0, MAXWINSIZE);
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
