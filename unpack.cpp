@@ -908,18 +908,18 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 }
 
 
-void Unpack::UnpWriteData(byte *Data, size_t Size)
+void Unpack::UnpWriteData(byte *data, size_t size)
 {
     if (m_writtenSize >= m_destUnpSize)
         return;
 
-    size_t WriteSize = Size;
-    int64 LeftToWrite = m_destUnpSize - m_writtenSize;
-    if ((int64)WriteSize > LeftToWrite)
-        WriteSize = (size_t)LeftToWrite;
+    size_t writesize  = size;
+    int64 leftToWrite = m_destUnpSize - m_writtenSize;
+    if ((int64)writesize > leftToWrite)
+        writesize = (size_t)leftToWrite;
 
-    m_io->UnpWrite(Data, WriteSize);
-    m_writtenSize += Size;
+    m_io->UnpWrite(data, writesize);
+    m_writtenSize += size;
 }
 
 
