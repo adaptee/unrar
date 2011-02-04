@@ -23,7 +23,7 @@ Unpack::~Unpack()
     if ( !m_useExternalWindow)
         delete[] Window;
 
-    InitFilters();
+    ResetFilters();
 }
 
 
@@ -569,7 +569,7 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     {
         FiltPos = RarVM::ReadData(Inp);
         if (FiltPos == 0)
-            InitFilters();
+            ResetFilters();
         else
             FiltPos--;
     }
@@ -1074,7 +1074,7 @@ void Unpack::UnpInitData(int Solid)
         PPMEscChar = 2;
         UnpBlockType = BLOCK_LZ;
 
-        InitFilters();
+        ResetFilters();
     }
 
     InitBitInput();
@@ -1085,7 +1085,7 @@ void Unpack::UnpInitData(int Solid)
 }
 
 
-void Unpack::InitFilters()
+void Unpack::ResetFilters()
 {
     OldFilterLengths.Reset();
     LastFilter = 0;
