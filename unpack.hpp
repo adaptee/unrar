@@ -134,7 +134,8 @@ private:
     DecodeTable RD;  // Decode repeating distances.
     DecodeTable BD;  // Decod bit lengths in Huffman table.
 
-    unsigned int OldDist[4], OldDistPtr;
+    unsigned int OldDist[4];
+    unsigned int OldDistPtr;
 
     unsigned int m_lastDistance;
     unsigned int m_lastLength;
