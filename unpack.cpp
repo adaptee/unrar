@@ -238,7 +238,7 @@ void Unpack::Unpack29(bool Solid)
                 (WrPtr != UnpPtr) )
         {
             UnpWriteBuf();
-            if (WrittenFileSize > DestUnpSize)
+            if (m_writtenSize > DestUnpSize)
                 return;
             else
                 m_hasExtractFile = false;
@@ -357,23 +357,23 @@ void Unpack::Unpack29(bool Solid)
                         addbits(Bits-4);
                     }
 
-                    if (LowDistRepCount > 0)
+                    if (m_lowDistanceRepeatCount > 0)
                     {
-                        LowDistRepCount--;
-                        Distance += PrevLowDist;
+                        m_lowDistanceRepeatCount--;
+                        Distance += m_prevLowDistance;
                     }
                     else
                     {
                         int LowDist = DecodeNumber(&LDD);
                         if (LowDist == 16)
                         {
-                            LowDistRepCount = LOW_DIST_REP_COUNT-1;
-                            Distance += PrevLowDist;
+                            m_lowDistanceRepeatCount = LOW_DIST_REP_COUNT-1;
+                            Distance += m_prevLowDistance;
                         }
                         else
                         {
                             Distance += LowDist;
-                            PrevLowDist = LowDist;
+                            m_prevLowDistance = LowDist;
                         }
                     }
                 } // end of if (DistNumber > 9)
@@ -859,7 +859,7 @@ void Unpack::UnpWriteBuf()
                     PrgStack[i] = NULL;
                 }
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
-                WrittenFileSize += FilteredDataSize;
+                m_writtenSize += FilteredDataSize;
                 WrittenBorder = BlockEnd;
                 WriteSize     = (UnpPtr-WrittenBorder)&MAXWINMASK;
             }
@@ -886,9 +886,9 @@ void Unpack::ExecuteCode(VM_PreparedProgram *Prg)
 {
     if (Prg->GlobalData.Size()>0)
     {
-        Prg->InitR[6]=(uint)WrittenFileSize;
-        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x24],(uint)WrittenFileSize);
-        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x28],(uint)(WrittenFileSize>>32));
+        Prg->InitR[6]=(uint)m_writtenSize;
+        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x24],(uint)m_writtenSize);
+        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x28],(uint)(m_writtenSize>>32));
         m_vm.Execute(Prg);
     }
 }
@@ -910,16 +910,16 @@ void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 
 void Unpack::UnpWriteData(byte *Data, size_t Size)
 {
-    if (WrittenFileSize >= DestUnpSize)
+    if (m_writtenSize >= DestUnpSize)
         return;
 
     size_t WriteSize = Size;
-    int64 LeftToWrite = DestUnpSize - WrittenFileSize;
+    int64 LeftToWrite = DestUnpSize - m_writtenSize;
     if ((int64)WriteSize > LeftToWrite)
         WriteSize = (size_t)LeftToWrite;
 
     m_io->UnpWrite(Data, WriteSize);
-    WrittenFileSize += Size;
+    m_writtenSize += Size;
 }
 
 
@@ -941,9 +941,9 @@ bool Unpack::ReadTables()
         return(m_ppm.DecodeInit(this, PPMEscChar));
     }
 
-    m_blocktype    = BLOCK_LZ;
-    PrevLowDist     = 0;
-    LowDistRepCount = 0;
+    m_blocktype              = BLOCK_LZ;
+    m_prevLowDistance        = 0;
+    m_lowDistanceRepeatCount = 0;
 
     if (!(BitField & 0x4000))
         memset(UnpOldTable, 0, sizeof(UnpOldTable));
@@ -1074,9 +1074,9 @@ void Unpack::UnpInitData(int Solid)
     }
 
     InitBitInput();
-    WrittenFileSize = 0;
-    m_readtop       = 0;
-    m_readborder    = 0;
+    m_writtenSize = 0;
+    m_readtop     = 0;
+    m_readborder  = 0;
 
 }
 

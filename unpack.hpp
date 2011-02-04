@@ -160,13 +160,13 @@ private:
 
     int64 DestUnpSize;
 
-    int64 WrittenFileSize;
+    int64 m_writtenSize;
 
     bool m_hasReadTables;
     bool m_hasExtractFile;
 
-    int PrevLowDist;
-    int LowDistRepCount;
+    int m_prevLowDistance;
+    int m_lowDistanceRepeatCount;
 
 };
 
