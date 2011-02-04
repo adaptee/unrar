@@ -63,19 +63,19 @@ void Unpack::DoUnpack(int Method, bool Solid)
 }
 
 
-void Unpack::InsertOldDist(unsigned int Distance)
+void Unpack::InsertOldDist(unsigned int distance)
 {
     OldDist[3] = OldDist[2];
     OldDist[2] = OldDist[1];
     OldDist[1] = OldDist[0];
-    OldDist[0] = Distance;
+    OldDist[0] = distance;
 }
 
 
-void Unpack::InsertLastMatch(unsigned int Length, unsigned int Distance)
+void Unpack::InsertLastMatch(unsigned int length, unsigned int distance)
 {
-    LastDist   = Distance;
-    LastLength = Length;
+    LastDist   = distance;
+    LastLength = length;
 }
 
 
