@@ -165,7 +165,8 @@ private:
     bool m_hasReadTables;
     bool m_hasExtractFile;
 
-    int PrevLowDist, LowDistRepCount;
+    int PrevLowDist;
+    int LowDistRepCount;
 
 };
 
