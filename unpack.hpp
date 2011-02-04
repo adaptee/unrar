@@ -75,7 +75,7 @@ public:
     ~Unpack();
     void Init(byte *Window=NULL);
     void DoUnpack(int Method, bool Solid);
-    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;FileExtracted=false;}
+    void SetDestSize(int64 DestSize) {DestUnpSize=DestSize;m_isFileExtracted=false;}
 
     unsigned int GetChar()
     {
@@ -125,7 +125,7 @@ private:
        size required to write block length if lengths are repeating */
     Array<int> OldFilterLengths;
 
-    int LastFilter;
+    int m_lastfilter;
 
     bool TablesRead;
 
@@ -161,7 +161,7 @@ private:
     bool UnpAllBuf;
     bool UnpSomeRead;
     int64 WrittenFileSize;
-    bool FileExtracted;
+    bool m_isFileExtracted;
 
     int PrevLowDist, LowDistRepCount;
 

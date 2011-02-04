@@ -212,7 +212,7 @@ void Unpack::Unpack29(bool Solid)
             }
     }
 
-    FileExtracted = true;
+    m_isFileExtracted = true;
 
     UnpInitData(Solid);
 
@@ -243,7 +243,7 @@ void Unpack::Unpack29(bool Solid)
             if (WrittenFileSize > DestUnpSize)
                 return;
             else
-                FileExtracted = false;
+                m_isFileExtracted = false;
                 return;
         }
 
@@ -575,13 +575,13 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     }
     else
     {
-        FiltPos = LastFilter; // use the same filter as last time
+        FiltPos = m_lastfilter; // use the same filter as last time
     }
 
     if (FiltPos > Filters.Size() || FiltPos > OldFilterLengths.Size())
         return false;
 
-    LastFilter = FiltPos;
+    m_lastfilter = FiltPos;
     bool NewFilter = (FiltPos == Filters.Size());
 
     UnpackFilter * StackFilter = new UnpackFilter; // new filter for PrgStack
@@ -1088,7 +1088,7 @@ void Unpack::UnpInitData(int Solid)
 void Unpack::ResetFilters()
 {
     OldFilterLengths.Reset();
-    LastFilter = 0;
+    m_lastfilter = 0;
 
     for (size_t i=0;i<Filters.Size();i++)
         delete Filters[i];
