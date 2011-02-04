@@ -60,7 +60,7 @@ struct UnpackFilter
     bool NextWindow;
 
     // position of parent filter in Filters array used as prototype for filter
-    // in PrgStack array. Not defined for filters in Filters array.
+    // in m_progStack array. Not defined for filters in m_filters array.
     unsigned int ParentFilter;
 
     VM_PreparedProgram Prg;
@@ -117,23 +117,23 @@ private:
     RarVM m_vm;
 
     /* Filters code, one entry per filter */
-    Array<UnpackFilter*> Filters;
+    Array<UnpackFilter*> m_filters;
 
     /* Filters stack, several entrances of same filter are possible */
-    Array<UnpackFilter*> PrgStack;
+    Array<UnpackFilter*> m_progStack;
 
     /* lengths of preceding blocks, one length per filter. Used to reduce
        size required to write block length if lengths are repeating */
-    Array<int> OldFilterLengths;
+    Array<int> m_oldFilterLengths;
 
     int m_lastfilter;
 
 
-    DecodeTable LD;  // Decode literals.
-    DecodeTable DD;  // Decode distances.
-    DecodeTable LDD; // Decode lower bits of distances.
-    DecodeTable RD;  // Decode repeating distances.
-    DecodeTable BD;  // Decod bit lengths in Huffman table.
+    DecodeTable m_LD;  // Decode literals.
+    DecodeTable m_DD;  // Decode distances.
+    DecodeTable m_LDD; // Decode lower bits of distances.
+    DecodeTable m_RD;  // Decode repeating distances.
+    DecodeTable m_BD;  // Decod bit lengths in Huffman table.
 
     unsigned int m_oldDistances[4];
     unsigned int m_oldDistancePtr;
@@ -161,7 +161,6 @@ private:
 
 
     int64 m_destUnpSize;
-
     int64 m_writtenSize;
 
     bool m_hasReadTables;

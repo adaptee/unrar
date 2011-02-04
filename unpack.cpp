@@ -326,7 +326,7 @@ void Unpack::Unpack29(bool Solid)
             continue;
         }
 
-        int Number = DecodeNumber(&LD);
+        int Number = DecodeNumber(&m_LD);
 
         if (Number < 256)
         {
@@ -345,7 +345,7 @@ void Unpack::Unpack29(bool Solid)
                 addbits(Bits);
             }
 
-            int DistNumber        = DecodeNumber(&DD);
+            int DistNumber        = DecodeNumber(&m_DD);
             unsigned int Distance = DDecode[DistNumber] + 1;
             if ((Bits=DBits[DistNumber]) > 0)
             {
@@ -364,7 +364,7 @@ void Unpack::Unpack29(bool Solid)
                     }
                     else
                     {
-                        int LowDist = DecodeNumber(&LDD);
+                        int LowDist = DecodeNumber(&m_LDD);
                         if (LowDist == 16)
                         {
                             m_lowDistanceRepeatCount = LOW_DIST_REP_COUNT-1;
@@ -428,7 +428,7 @@ void Unpack::Unpack29(bool Solid)
 
             m_oldDistances[0] = Distance;
 
-            int LengthNumber = DecodeNumber(&RD);
+            int LengthNumber = DecodeNumber(&m_RD);
             int Length       = LDecode[LengthNumber]+2;
             if ((Bits=LBits[LengthNumber])>0)
             {
@@ -576,13 +576,13 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
         FiltPos = m_lastfilter; // use the same filter as last time
     }
 
-    if (FiltPos > Filters.Size() || FiltPos > OldFilterLengths.Size())
+    if (FiltPos > m_filters.Size() || FiltPos > m_oldFilterLengths.Size())
         return false;
 
     m_lastfilter = FiltPos;
-    bool NewFilter = (FiltPos == Filters.Size());
+    bool NewFilter = (FiltPos == m_filters.Size());
 
-    UnpackFilter * StackFilter = new UnpackFilter; // new filter for PrgStack
+    UnpackFilter * StackFilter = new UnpackFilter; // new filter for m_progStack
     UnpackFilter * Filter;
 
     if (NewFilter) // new filter code, never used before since VM reset
@@ -591,35 +591,35 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
         if (FiltPos > 1024)
             return false;
 
-        Filters.Add(1);
-        Filters[Filters.Size()-1]=Filter=new UnpackFilter;
-        StackFilter->ParentFilter = (uint)(Filters.Size()-1);
-        OldFilterLengths.Add(1);
+        m_filters.Add(1);
+        m_filters[m_filters.Size()-1]=Filter=new UnpackFilter;
+        StackFilter->ParentFilter = (uint)(m_filters.Size()-1);
+        m_oldFilterLengths.Add(1);
         Filter->ExecCount = 0;
     }
     else  // filter was used in the past
     {
-        Filter = Filters[FiltPos];
+        Filter = m_filters[FiltPos];
         StackFilter->ParentFilter = FiltPos;
         Filter->ExecCount++;
     }
 
     int EmptyCount = 0;
-    for (uint i=0;i<PrgStack.Size();i++)
+    for (uint i=0;i<m_progStack.Size();i++)
     {
-        PrgStack[i-EmptyCount] = PrgStack[i];
-        if (PrgStack[i] == NULL)
+        m_progStack[i-EmptyCount] = m_progStack[i];
+        if (m_progStack[i] == NULL)
             EmptyCount++;
         if (EmptyCount > 0)
-            PrgStack[i] = NULL;
+            m_progStack[i] = NULL;
     }
     if (EmptyCount == 0)
     {
-        PrgStack.Add(1);
+        m_progStack.Add(1);
         EmptyCount = 1;
     }
-    int StackPos = (int)(PrgStack.Size() - EmptyCount);
-    PrgStack[StackPos] = StackFilter;
+    int StackPos = (int)(m_progStack.Size() - EmptyCount);
+    m_progStack[StackPos] = StackFilter;
     StackFilter->ExecCount = Filter->ExecCount;
 
     uint BlockStart = RarVM::ReadData(Inp);
@@ -630,12 +630,12 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
     if (FirstByte & 0x20)
         StackFilter->BlockLength = RarVM::ReadData(Inp);
     else
-        StackFilter->BlockLength = FiltPos < OldFilterLengths.Size() ? OldFilterLengths[FiltPos] : 0;
+        StackFilter->BlockLength = FiltPos < m_oldFilterLengths.Size() ? m_oldFilterLengths[FiltPos] : 0;
     StackFilter->NextWindow = (m_writePtr != m_unpackPtr) && ((m_writePtr-m_unpackPtr) & MAXWINMASK) <= BlockStart;
 
     //  DebugLog("\nNextWindow: m_unpackPtr=%08x m_writePtr=%08x BlockStart=%08x", m_unpackPtr, m_writePtr, BlockStart);
 
-    OldFilterLengths[FiltPos] = StackFilter->BlockLength;
+    m_oldFilterLengths[FiltPos] = StackFilter->BlockLength;
 
     memset(StackFilter->Prg.InitR, 0, sizeof(StackFilter->Prg.InitR));
     StackFilter->Prg.InitR[3] = VM_GLOBALMEMADDR;
@@ -749,7 +749,7 @@ void Unpack::UnpWriteBuf()
 {
     unsigned int WrittenBorder = m_writePtr;
     unsigned int WriteSize     = (m_unpackPtr - WrittenBorder) & MAXWINMASK;
-    for (size_t i=0;i<PrgStack.Size();i++)
+    for (size_t i=0;i<m_progStack.Size();i++)
     {
         // Here we apply filters to data which we need to write.
         // We always copy data to virtual machine memory before processing.
@@ -757,7 +757,7 @@ void Unpack::UnpWriteBuf()
         // these data can be used for future string matches, so we must
         // preserve them in original form.
 
-        UnpackFilter * flt = PrgStack[i];
+        UnpackFilter * flt = m_progStack[i];
         if (flt == NULL)
             continue;
         if (flt->NextWindow)
@@ -787,7 +787,7 @@ void Unpack::UnpWriteBuf()
                     m_vm.SetMemory(FirstPartLength, m_window, BlockEnd);
                 }
 
-                VM_PreparedProgram *ParentPrg = &Filters[flt->ParentFilter]->Prg;
+                VM_PreparedProgram *ParentPrg = &m_filters[flt->ParentFilter]->Prg;
                 VM_PreparedProgram *Prg = &flt->Prg;
 
                 if (ParentPrg->GlobalData.Size() > VM_FIXEDGLOBALSIZE)
@@ -815,11 +815,11 @@ void Unpack::UnpWriteBuf()
                 byte * FilteredData = Prg->FilteredData;
                 unsigned int FilteredDataSize = Prg->FilteredDataSize;
 
-                delete PrgStack[i];
-                PrgStack[i] = NULL;
-                while ( i+1 < PrgStack.Size())
+                delete m_progStack[i];
+                m_progStack[i] = NULL;
+                while ( i+1 < m_progStack.Size())
                 {
-                    UnpackFilter *NextFilter = PrgStack[i+1];
+                    UnpackFilter *NextFilter = m_progStack[i+1];
                     if (    NextFilter == NULL ||
                             NextFilter->BlockStart != BlockStart ||
                             NextFilter->BlockLength != FilteredDataSize ||
@@ -830,7 +830,7 @@ void Unpack::UnpWriteBuf()
 
                     m_vm.SetMemory(0, FilteredData, FilteredDataSize);
 
-                    VM_PreparedProgram *ParentPrg = &Filters[NextFilter->ParentFilter]->Prg;
+                    VM_PreparedProgram *ParentPrg = &m_filters[NextFilter->ParentFilter]->Prg;
                     VM_PreparedProgram *NextPrg   = &NextFilter->Prg;
 
                     if (ParentPrg->GlobalData.Size()>VM_FIXEDGLOBALSIZE)
@@ -855,8 +855,8 @@ void Unpack::UnpWriteBuf()
                     FilteredData     = NextPrg->FilteredData;
                     FilteredDataSize = NextPrg->FilteredDataSize;
                     i++;
-                    delete PrgStack[i];
-                    PrgStack[i] = NULL;
+                    delete m_progStack[i];
+                    m_progStack[i] = NULL;
                 }
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
                 m_writtenSize += FilteredDataSize;
@@ -865,9 +865,9 @@ void Unpack::UnpWriteBuf()
             }
             else
             {
-                for (size_t J=i;J<PrgStack.Size();J++)
+                for (size_t J=i;J<m_progStack.Size();J++)
                 {
-                    UnpackFilter * flt = PrgStack[J];
+                    UnpackFilter * flt = m_progStack[J];
                     if (flt!=NULL && flt->NextWindow)
                         flt->NextWindow=false;
                 }
@@ -978,7 +978,7 @@ bool Unpack::ReadTables()
         }
     }
 
-    MakeDecodeTables(BitLength, &BD, BC);
+    MakeDecodeTables(BitLength, &m_BD, BC);
 
     const int TableSize = HUFF_TABLE_SIZE;
     for (int i=0;i<TableSize;)
@@ -987,7 +987,7 @@ bool Unpack::ReadTables()
             if (!UnpReadBuf())
                 return false;
 
-        int Number = DecodeNumber(&BD);
+        int Number = DecodeNumber(&m_BD);
         if (Number < 16)
         {
             Table[i] = (Number + m_oldUnpackTable[i]) & 0xf;
@@ -1039,10 +1039,10 @@ bool Unpack::ReadTables()
     if (InAddr > m_readtop)
         return false;
 
-    MakeDecodeTables(&Table[0], &LD, NC);
-    MakeDecodeTables(&Table[NC], &DD, DC);
-    MakeDecodeTables(&Table[NC+DC], &LDD, LDC);
-    MakeDecodeTables(&Table[NC+DC+LDC], &RD, RC);
+    MakeDecodeTables(&Table[0], &m_LD, NC);
+    MakeDecodeTables(&Table[NC], &m_DD, DC);
+    MakeDecodeTables(&Table[NC+DC], &m_LDD, LDC);
+    MakeDecodeTables(&Table[NC+DC+LDC], &m_RD, RC);
     memcpy(m_oldUnpackTable, Table, sizeof(m_oldUnpackTable));
 
     return true;
@@ -1060,11 +1060,11 @@ void Unpack::UnpInitData(int Solid)
 
         //    memset(m_window, 0, MAXWINSIZE);
         memset(m_oldUnpackTable, 0, sizeof(m_oldUnpackTable));
-        memset(&LD, 0, sizeof(LD));
-        memset(&DD, 0, sizeof(DD));
-        memset(&LDD, 0, sizeof(LDD));
-        memset(&RD, 0, sizeof(RD));
-        memset(&BD, 0, sizeof(BD));
+        memset(&m_LD, 0, sizeof(m_LD));
+        memset(&m_DD, 0, sizeof(m_DD));
+        memset(&m_LDD, 0, sizeof(m_LDD));
+        memset(&m_RD, 0, sizeof(m_RD));
+        memset(&m_BD, 0, sizeof(m_BD));
 
         m_unpackPtr = m_writePtr = 0;
         m_EscCharOfPPM = 2;
@@ -1083,16 +1083,16 @@ void Unpack::UnpInitData(int Solid)
 
 void Unpack::ResetFilters()
 {
-    OldFilterLengths.Reset();
+    m_oldFilterLengths.Reset();
     m_lastfilter = 0;
 
-    for (size_t i=0; i < Filters.Size(); i++)
-        delete Filters[i];
-    Filters.Reset();
+    for (size_t i=0; i < m_filters.Size(); i++)
+        delete m_filters[i];
+    m_filters.Reset();
 
-    for (size_t i=0;i<PrgStack.Size();i++)
-        delete PrgStack[i];
-    PrgStack.Reset();
+    for (size_t i=0;i<m_progStack.Size();i++)
+        delete m_progStack[i];
+    m_progStack.Reset();
 }
 
 
