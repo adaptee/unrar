@@ -13,8 +13,6 @@ Unpack::Unpack(ComprDataIO *DataIO)
     Window = NULL;
     m_useExternalWindow = false;
 
-    UnpAllBuf   = false;
-    UnpSomeRead = false;
 }
 
 
@@ -861,7 +859,6 @@ void Unpack::UnpWriteBuf()
                     PrgStack[i] = NULL;
                 }
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
-                UnpSomeRead = true;
                 WrittenFileSize += FilteredDataSize;
                 WrittenBorder = BlockEnd;
                 WriteSize     = (UnpPtr-WrittenBorder)&MAXWINMASK;
@@ -899,13 +896,10 @@ void Unpack::ExecuteCode(VM_PreparedProgram *Prg)
 
 void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
 {
-    if (EndPtr != StartPtr)
-        UnpSomeRead = true;
     if (EndPtr < StartPtr)
     {
         UnpWriteData(&Window[StartPtr], -(int)StartPtr & MAXWINMASK);
         UnpWriteData(Window, EndPtr);
-        UnpAllBuf = true;
     }
     else
     {

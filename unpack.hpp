@@ -157,8 +157,6 @@ private:
 
     int64 DestUnpSize;
 
-    bool UnpAllBuf;
-    bool UnpSomeRead;
     int64 WrittenFileSize;
 
     bool m_hasReadTables;
