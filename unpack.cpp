@@ -901,11 +901,11 @@ void Unpack::UnpWriteArea(unsigned int startPtr, unsigned int endPtr)
     if (endPtr < startPtr)
     {
         UnpWriteData(&m_window[startPtr], -(int)startPtr & MAXWINMASK);
-        UnpWriteData(m_window, endPtr);
+        UnpWriteData(m_window, endPtr - 0);
     }
     else
     {
-        UnpWriteData(&m_window[startPtr], endPtr-startPtr);
+        UnpWriteData(&m_window[startPtr], endPtr - startPtr);
     }
 }
 
