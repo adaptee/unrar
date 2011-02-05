@@ -204,7 +204,7 @@ void Unpack::Unpack29(bool Solid)
     {
         int Dist=0, BitLength=0, Slot=0;
         for (int i=0;i<sizeof(DBitLengthCounts)/sizeof(DBitLengthCounts[0]);i++, BitLength++)
-            for (int J=0;J<DBitLengthCounts[i];J++, Slot++, Dist+=(1<<BitLength))
+            for (int j=0;j<DBitLengthCounts[i];j++, Slot++, Dist+=(1<<BitLength))
             {
                 DDecode[Slot] = Dist;
                 DBits[Slot]   = BitLength;
@@ -759,16 +759,18 @@ void Unpack::UnpWriteBuf()
         // these data can be used for future string matches, so we must
         // preserve them in original form.
 
-        UnpackFilter * flt = m_progStack[i];
-        if (flt == NULL)
+        UnpackFilter * filter = m_progStack[i];
+        if (filter == NULL)
             continue;
-        if (flt->NextWindow)
+        if (filter->NextWindow)
         {
-            flt->NextWindow = false;
+            filter->NextWindow = false;
             continue;
         }
-        unsigned int BlockStart  = flt->BlockStart;
-        unsigned int BlockLength = flt->BlockLength;
+
+        unsigned int BlockStart  = filter->BlockStart;
+        unsigned int BlockLength = filter->BlockLength;
+
         if (((BlockStart - writeBorder) & MAXWINMASK) < writeSize)
         {
             if (writeBorder != BlockStart)
@@ -777,6 +779,7 @@ void Unpack::UnpWriteBuf()
                 writeBorder = BlockStart;
                 writeSize     = (m_unpackPtr - writeBorder) & MAXWINMASK;
             }
+
             if (BlockLength <= writeSize)
             {
                 unsigned int BlockEnd = (BlockStart + BlockLength) & MAXWINMASK;
@@ -789,8 +792,8 @@ void Unpack::UnpWriteBuf()
                     m_vm.SetMemory(FirstPartLength, m_window, BlockEnd);
                 }
 
-                VM_PreparedProgram *ParentPrg = &m_filters[flt->ParentFilter]->Prg;
-                VM_PreparedProgram *Prg = &flt->Prg;
+                VM_PreparedProgram *ParentPrg = &m_filters[filter->ParentFilter]->Prg;
+                VM_PreparedProgram *Prg = &filter->Prg;
 
                 if (ParentPrg->GlobalData.Size() > VM_FIXEDGLOBALSIZE)
                 {
@@ -860,18 +863,19 @@ void Unpack::UnpWriteBuf()
                     delete m_progStack[i];
                     m_progStack[i] = NULL;
                 }
+
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
                 m_writtenSize += FilteredDataSize;
                 writeBorder = BlockEnd;
-                writeSize     = (m_unpackPtr-writeBorder)&MAXWINMASK;
+                writeSize   = (m_unpackPtr-writeBorder) & MAXWINMASK;
             }
             else
             {
-                for (size_t J=i;J<m_progStack.Size();J++)
+                for (size_t j=i;j<m_progStack.Size();j++)
                 {
-                    UnpackFilter * flt = m_progStack[J];
-                    if (flt!=NULL && flt->NextWindow)
-                        flt->NextWindow=false;
+                    UnpackFilter * filter = m_progStack[j];
+                    if (filter != NULL && filter->NextWindow)
+                        filter->NextWindow=false;
                 }
                 m_writePtr = writeBorder;
                 return;
