@@ -748,8 +748,9 @@ bool Unpack::UnpReadBuf()
 
 void Unpack::UnpWriteBuf()
 {
-    unsigned int WrittenBorder = m_writePtr;
-    unsigned int WriteSize     = (m_unpackPtr - WrittenBorder) & MAXWINMASK;
+    unsigned int writeBorder = m_writePtr;
+    unsigned int writeSize     = (m_unpackPtr - writeBorder) & MAXWINMASK;
+
     for (size_t i=0;i<m_progStack.Size();i++)
     {
         // Here we apply filters to data which we need to write.
@@ -768,15 +769,15 @@ void Unpack::UnpWriteBuf()
         }
         unsigned int BlockStart  = flt->BlockStart;
         unsigned int BlockLength = flt->BlockLength;
-        if (((BlockStart - WrittenBorder) & MAXWINMASK) < WriteSize)
+        if (((BlockStart - writeBorder) & MAXWINMASK) < writeSize)
         {
-            if (WrittenBorder != BlockStart)
+            if (writeBorder != BlockStart)
             {
-                UnpWriteArea(WrittenBorder, BlockStart);
-                WrittenBorder = BlockStart;
-                WriteSize     = (m_unpackPtr - WrittenBorder) & MAXWINMASK;
+                UnpWriteArea(writeBorder, BlockStart);
+                writeBorder = BlockStart;
+                writeSize     = (m_unpackPtr - writeBorder) & MAXWINMASK;
             }
-            if (BlockLength <= WriteSize)
+            if (BlockLength <= writeSize)
             {
                 unsigned int BlockEnd = (BlockStart + BlockLength) & MAXWINMASK;
                 if (BlockStart < BlockEnd || BlockEnd == 0)
@@ -861,8 +862,8 @@ void Unpack::UnpWriteBuf()
                 }
                 m_io->UnpWrite(FilteredData, FilteredDataSize);
                 m_writtenSize += FilteredDataSize;
-                WrittenBorder = BlockEnd;
-                WriteSize     = (m_unpackPtr-WrittenBorder)&MAXWINMASK;
+                writeBorder = BlockEnd;
+                writeSize     = (m_unpackPtr-writeBorder)&MAXWINMASK;
             }
             else
             {
@@ -872,13 +873,13 @@ void Unpack::UnpWriteBuf()
                     if (flt!=NULL && flt->NextWindow)
                         flt->NextWindow=false;
                 }
-                m_writePtr = WrittenBorder;
+                m_writePtr = writeBorder;
                 return;
             }
         }
     }
 
-    UnpWriteArea(WrittenBorder, m_unpackPtr);
+    UnpWriteArea(writeBorder, m_unpackPtr);
     m_writePtr = m_unpackPtr;
 }
 
@@ -914,12 +915,12 @@ void Unpack::UnpWriteData(byte *data, size_t size)
     if (m_writtenSize >= m_destUnpSize)
         return;
 
-    size_t writesize  = size;
+    size_t writeSize  = size;
     int64 leftToWrite = m_destUnpSize - m_writtenSize;
-    if ((int64)writesize > leftToWrite)
-        writesize = (size_t)leftToWrite;
+    if ((int64)writeSize > leftToWrite)
+        writeSize = (size_t)leftToWrite;
 
-    m_io->UnpWrite(data, writesize);
+    m_io->UnpWrite(data, writeSize);
     m_writtenSize += size;
 }
 
