@@ -516,22 +516,22 @@ bool Unpack::ReadVMCode()
 
 bool Unpack::ReadVMCodePPM()
 {
-    unsigned int FirstByte = SafePPMDecodeChar();
-    if ((int)FirstByte == -1)
+    unsigned int firstByte = SafePPMDecodeChar();
+    if ((int)firstByte == -1)
         return false;
 
-    int Length = (FirstByte & 7) + 1;
-    if (Length == 7)
+    int length = (firstByte & 7) + 1;
+    if (length == 7)
     {
         int B1 = SafePPMDecodeChar();
         if (B1 == -1)
             return false;
 
-        Length = B1 + 7;
+        length = B1 + 7;
     }
     else
     {
-        if (Length == 8)
+        if (length == 8)
         {
             int B1 = SafePPMDecodeChar();
             if (B1 == -1)
@@ -539,20 +539,20 @@ bool Unpack::ReadVMCodePPM()
             int B2 = SafePPMDecodeChar();
             if (B2 == -1)
                 return false;
-            Length = B1 * 256 + B2;
+            length = B1 * 256 + B2;
         }
     }
 
-    Array<byte> VMCode(Length);
-    for (int i=0;i<Length;i++)
+    Array<byte> VMCode(length);
+    for (int i=0;i<length;i++)
     {
-        int Ch = SafePPMDecodeChar();
-        if (Ch == -1)
+        int ch = SafePPMDecodeChar();
+        if (ch == -1)
             return false;
-        VMCode[i] = Ch;
+        VMCode[i] = ch;
     }
 
-    return AddVMCode(FirstByte, &VMCode[0], Length);
+    return AddVMCode(firstByte, &VMCode[0], length);
 }
 
 
