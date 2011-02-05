@@ -78,50 +78,51 @@ void Unpack::InsertLastMatch(unsigned int length, unsigned int distance)
 }
 
 
-void Unpack::CopyString(uint Length, uint Distance)
+void Unpack::CopyString(uint length, uint distance)
 {
-    uint SrcPtr = m_unpackPtr - Distance;
-    if ( (SrcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
+    uint srcPtr = m_unpackPtr - distance;
+
+    if ( (srcPtr < (MAXWINSIZE - MAX_LZ_MATCH)) &&
          (m_unpackPtr < (MAXWINSIZE - MAX_LZ_MATCH))
        )
     {
         // If we are not close to end of window, we do not need to waste time
         // to "& MAXWINMASK" pointer protection.
 
-        byte *Src  = m_window + SrcPtr;
-        byte *Dest = m_window + m_unpackPtr;
-        m_unpackPtr += Length;
+        byte *src  = m_window + srcPtr;
+        byte *dest = m_window + m_unpackPtr;
+        m_unpackPtr += length;
 
-        while (Length >= 8)
+        while (length >= 8)
         {
             // Unroll the loop for 8 byte and longer strings.
-            Dest[0] = Src[0];
-            Dest[1] = Src[1];
-            Dest[2] = Src[2];
-            Dest[3] = Src[3];
-            Dest[4] = Src[4];
-            Dest[5] = Src[5];
-            Dest[6] = Src[6];
-            Dest[7] = Src[7];
+            dest[0] = src[0];
+            dest[1] = src[1];
+            dest[2] = src[2];
+            dest[3] = src[3];
+            dest[4] = src[4];
+            dest[5] = src[5];
+            dest[6] = src[6];
+            dest[7] = src[7];
 
-            Src  += 8;
-            Dest += 8;
-            Length -= 8;
+            src  += 8;
+            dest += 8;
+            length -= 8;
         }
 
         // Unroll the loop for 0 - 7 bytes left. Note that we use nested "if"s.
-        if (Length>0) { Dest[0]=Src[0];
-            if (Length>1) { Dest[1]=Src[1];
-                if (Length>2) { Dest[2]=Src[2];
-                    if (Length>3) { Dest[3]=Src[3];
-                        if (Length>4) { Dest[4]=Src[4];
-                            if (Length>5) { Dest[5]=Src[5];
-                                if (Length>6) { Dest[6]=Src[6]; } } } } } } } // Close all nested "if"s.
+        if (length>0) { dest[0]=src[0];
+            if (length>1) { dest[1]=src[1];
+                if (length>2) { dest[2]=src[2];
+                    if (length>3) { dest[3]=src[3];
+                        if (length>4) { dest[4]=src[4];
+                            if (length>5) { dest[5]=src[5];
+                                if (length>6) { dest[6]=src[6]; } } } } } } } // Close all nested "if"s.
     }
     else
-        while (Length--) // Slow copying with all possible precautions.
+        while (length--) // Slow copying with all possible precautions.
         {
-            m_window[m_unpackPtr] = m_window[SrcPtr++ & MAXWINMASK];
+            m_window[m_unpackPtr] = m_window[srcPtr++ & MAXWINMASK];
             m_unpackPtr = (m_unpackPtr+1) & MAXWINMASK;
         }
 }
@@ -151,24 +152,24 @@ uint Unpack::DecodeNumber(DecodeTable *Dec)
     addbits(Bits);
 
     // Calculate the distance from the start code for current bit length.
-    uint Dist = BitField - Dec->DecodeLen[Bits-1];
+    uint distance = BitField - Dec->DecodeLen[Bits-1];
 
     // Start codes are left aligned, but we need the normal right aligned
     // number. So we shift the distance to the right.
-    Dist >>= (16-Bits);
+    distance >>= (16-Bits);
 
     // Now we can calculate the position in the code list. It is the sum
     // of first position for current bit length and right aligned distance
     // between our bit field and start code for current bit length.
-    uint Pos = Dec->DecodePos[Bits]+Dist;
+    uint pos = Dec->DecodePos[Bits] + distance;
 
     // Out of bounds safety check required for damaged archives.
-    if (Pos >= Dec->MaxNum)
-        Pos = 0;
+    if (pos >= Dec->MaxNum)
+        pos = 0;
 
     // Convert the position in the code list to position in alphabet
     // and return it.
-    return Dec->DecodeNum[Pos];
+    return Dec->DecodeNum[pos];
 }
 
 
@@ -716,32 +717,32 @@ bool Unpack::AddVMCode(unsigned int FirstByte, byte *Code, int CodeSize)
 
 bool Unpack::UnpReadBuf()
 {
-    int DataSize = m_readtop - InAddr; // Data left to process.
-    if (DataSize < 0)
+    int datasize = m_readtop - InAddr; // Data left to process.
+    if (datasize < 0)
         return false;
 
     if (InAddr > BitInput::MAX_SIZE/2)
     {
         // If we already processed more than half of buffer, let's move
         // remaining data into beginning to free more space for new data.
-        if (DataSize > 0)
-            memmove(InBuf, InBuf+InAddr, DataSize);
+        if (datasize > 0)
+            memmove(InBuf, InBuf+InAddr, datasize);
         InAddr  = 0;
-        m_readtop = DataSize;
+        m_readtop = datasize;
     }
     else
     {
-        DataSize = m_readtop;
+        datasize = m_readtop;
     }
 
-    int ReadCode = m_io->UnpRead(InBuf+DataSize, (BitInput::MAX_SIZE-DataSize) & ~0xf);
+    int readCode = m_io->UnpRead(InBuf+datasize, (BitInput::MAX_SIZE-datasize) & ~0xf);
 
-    if (ReadCode > 0)
-        m_readtop += ReadCode;
+    if (readCode > 0)
+        m_readtop += readCode;
 
-    m_readborder = m_readtop-30;
+    m_readborder = m_readtop - 30;
 
-    return (ReadCode != -1);
+    return (readCode != -1);
 }
 
 
@@ -882,28 +883,28 @@ void Unpack::UnpWriteBuf()
 }
 
 
-void Unpack::ExecuteCode(VM_PreparedProgram *Prg)
+void Unpack::ExecuteCode(VM_PreparedProgram *prog)
 {
-    if (Prg->GlobalData.Size()>0)
+    if (prog->GlobalData.Size()>0)
     {
-        Prg->InitR[6]=(uint)m_writtenSize;
-        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x24],(uint)m_writtenSize);
-        m_vm.SetLowEndianValue((uint *)&Prg->GlobalData[0x28],(uint)(m_writtenSize>>32));
-        m_vm.Execute(Prg);
+        prog->InitR[6]=(uint)m_writtenSize;
+        m_vm.SetLowEndianValue((uint *)&prog->GlobalData[0x24],(uint)m_writtenSize);
+        m_vm.SetLowEndianValue((uint *)&prog->GlobalData[0x28],(uint)(m_writtenSize>>32));
+        m_vm.Execute(prog);
     }
 }
 
 
-void Unpack::UnpWriteArea(unsigned int StartPtr, unsigned int EndPtr)
+void Unpack::UnpWriteArea(unsigned int startPtr, unsigned int endPtr)
 {
-    if (EndPtr < StartPtr)
+    if (endPtr < startPtr)
     {
-        UnpWriteData(&m_window[StartPtr], -(int)StartPtr & MAXWINMASK);
-        UnpWriteData(m_window, EndPtr);
+        UnpWriteData(&m_window[startPtr], -(int)startPtr & MAXWINMASK);
+        UnpWriteData(m_window, endPtr);
     }
     else
     {
-        UnpWriteData(&m_window[StartPtr], EndPtr-StartPtr);
+        UnpWriteData(&m_window[startPtr], endPtr-startPtr);
     }
 }
 
